@@ -14,6 +14,19 @@ enum GeometryType {
   TRIANGLE_FAN = 6
 }
 
+export interface MeshPairData {
+  id: string;
+  mesh: MeshAssetData;
+  edgesMesh: MeshAssetData;
+}
+
+
+export interface MeshPair {
+  id: string;
+  mesh: Mesh;
+  edgesMesh: LinesMesh;
+}
+
 export interface MeshAssetData {
   positions: FloatArray | null;
   normals: FloatArray | null;
@@ -83,4 +96,16 @@ export function createMesh(name: string, scene: Scene, meshData: MeshAssetData):
   mesh._unIndexed = !indices || indices.length === 0;
 
   return mesh;
+}
+
+export function createMeshPair(scene: Scene, meshPair: MeshPairData): MeshPair {
+
+  const id = meshPair.id;
+
+  return {
+    id,
+    mesh: createMesh(id + 'mesh', scene, meshPair.mesh),
+    edgesMesh: createMesh(id + 'edges', scene, meshPair.edgesMesh) as LinesMesh,
+  }
+
 }

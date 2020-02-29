@@ -10,17 +10,17 @@ import {
 } from '@angular/core';
 import {
   ArcRotateCamera,
-  Camera,
+  Camera, Color3, Color4,
   Engine,
-  HemisphericLight,
+  HemisphericLight, LinesMesh, Material,
   Matrix,
-  Scene,
+  Scene, StandardMaterial,
   Vector3,
   VertexBuffer,
 } from '@babylonjs/core';
 import { Observable, Subject } from 'rxjs';
 import { map, shareReplay, startWith, switchAll, tap } from 'rxjs/operators';
-import { createMesh, MeshAssetData } from './load-mesh';
+import { createMesh, createMeshPair, MeshAssetData, MeshPairData } from './load-mesh';
 
 @Component({
   selector: 'app-root',
@@ -47,6 +47,8 @@ export class AppComponent implements AfterViewInit {
     const engine = new Engine(canvasElement, true);
 
     const scene = new Scene(engine);
+    scene.clearColor = new Color4(1, 1, 1, 1);
+    scene.useRightHandedSystem = true;
 
     const camera = new ArcRotateCamera(
       'ArcRotateCamera',
@@ -69,19 +71,36 @@ export class AppComponent implements AfterViewInit {
     camera.useAutoRotationBehavior = false;
     camera.wheelPrecision = 0.5;
     camera.attachControl(canvasElement, false, true, 1);
-    camera.mode = Camera.ORTHOGRAPHIC_CAMERA;
     // (camera.inputs.attached.pointers as any).buttons = [1, 2];
 
-    camera.minZ = -10000;
-    camera.maxZ = 10000;
-    let orthoFrustrum = 200;
-    const ratio = canvasElement.clientWidth / canvasElement.clientHeight;
-    const computeOrthoCameraView = () => {
-      camera.orthoLeft = (-ratio * orthoFrustrum) / 2;
-      camera.orthoRight = (ratio * orthoFrustrum) / 2;
-      camera.orthoTop = orthoFrustrum / 2;
-      camera.orthoBottom = -orthoFrustrum / 2;
-    };
+    const ortho = true;
+    if (ortho) {
+
+      camera.mode = Camera.ORTHOGRAPHIC_CAMERA;
+
+      camera.minZ = -10000;
+      camera.maxZ = 10000;
+      let orthoFrustrum = 200;
+      const ratio = canvasElement.clientWidth / canvasElement.clientHeight;
+      const computeOrthoCameraView = () => {
+        camera.orthoLeft = (-ratio * orthoFrustrum) / 2;
+        camera.orthoRight = (ratio * orthoFrustrum) / 2;
+        camera.orthoTop = orthoFrustrum / 2;
+        camera.orthoBottom = -orthoFrustrum / 2;
+      };
+
+      computeOrthoCameraView();
+
+      const wheelListener = (e: WheelEvent) => {
+        const newFrustrum = orthoFrustrum * (e.deltaY > 0 ? 1.1 : 0.9);
+        if (newFrustrum < camera.upperRadiusLimit && newFrustrum > camera.lowerRadiusLimit) {
+          orthoFrustrum = newFrustrum;
+          computeOrthoCameraView();
+        }
+      };
+
+      canvasElement.addEventListener('wheel', wheelListener, false);
+    }
 
     canvasElement.addEventListener('click', () => {
       // We try to pick an object
@@ -90,18 +109,6 @@ export class AppComponent implements AfterViewInit {
       console.log(`pickResult`, pickResult);
 
     });
-
-    computeOrthoCameraView();
-
-    const wheelListener = (e: WheelEvent) => {
-      const newFrustrum = orthoFrustrum * (e.deltaY > 0 ? 1.1 : 0.9);
-      if (newFrustrum < camera.upperRadiusLimit && newFrustrum > camera.lowerRadiusLimit) {
-        orthoFrustrum = newFrustrum;
-        computeOrthoCameraView();
-      }
-    };
-
-    canvasElement.addEventListener('wheel', wheelListener, false);
 
     // This creates a light, aiming 0,1,0 - to the sky (non-mesh)
     const light = new HemisphericLight('light', new Vector3(0, 1, 0), scene);
@@ -116,11 +123,20 @@ export class AppComponent implements AfterViewInit {
 
     this.zone.runOutsideAngular(() => engine.runRenderLoop(() => scene.render()));
 
-    this.http.get<MeshAssetData>('/assets/mesh.json').pipe(tap((res) => {
+    this.http.get<MeshPairData>('/assets/slotted-cube.json').pipe(tap((res) => {
 
-      const mesh = createMesh('foo', scene, res);
+      const { mesh, edgesMesh } = createMeshPair(scene, res);
+      edgesMesh.color = Color3.Black();
+      edgesMesh.parent = mesh;
 
-      const vertices = mesh.getVerticesData(VertexBuffer.PositionKind);
+      const material = new StandardMaterial(res.id + 'mat', scene);
+      material.diffuseColor = Color3.White();
+      material.sideOrientation = Material.CounterClockWiseSideOrientation;
+      mesh.material = material;
+
+      mesh.rotate(Vector3.Left(), Math.PI / 2);
+
+      const vertices = edgesMesh.getVerticesData(VertexBuffer.PositionKind);
 
       const lines: [Vector3, Vector3][] = [];
 
@@ -134,7 +150,7 @@ export class AppComponent implements AfterViewInit {
       }
 
       this.lines$$.next(render$.pipe(map(() => {
-        const worldMatrix = Matrix.Identity();
+        const worldMatrix = edgesMesh.getWorldMatrix();
         const transformMatrix = scene.getTransformMatrix();
         const viewport = scene.activeCamera.viewport;
 
@@ -158,19 +174,18 @@ export class AppComponent implements AfterViewInit {
   }
 
   public saveSvg() {
-    console.log({svg: this.svg.nativeElement});
+    console.log({ svg: this.svg.nativeElement });
 
     const blob = new Blob(
-      [ this.svg.nativeElement.outerHTML ],
+      [this.svg.nativeElement.outerHTML],
       {
-        type : "text/plain;charset=utf-8"
-      }
+        type: 'text/plain;charset=utf-8',
+      },
     );
-
 
     const link = this.renderer.createElement('a');
     link.style.display = 'none';
-    link.href = URL.createObjectURL( blob );
+    link.href = URL.createObjectURL(blob);
     link.download = 'wireframe.svg';
     link.dispatchEvent(new MouseEvent(`click`, { bubbles: true, cancelable: true, view: window }));
   }
