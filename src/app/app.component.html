@@ -1,6 +1,12 @@
 <h1>SVG from wireframe</h1>
 
-<div class="container">
-  <canvas #canvas></canvas>
-  <div *ngIf="pointerPos$ | async as pointer" class="pointer" [style.left.px]="pointer.x" [style.top.px]="pointer.y"></div>
-</div>
+<canvas #canvas></canvas>
+
+<svg #svg attr.viewBox="0 0 {{canvas.width}} {{canvas.height}}" xmlns="http://www.w3.org/2000/svg">
+
+
+  <svg:line *ngFor="let line of lines$ | async" [attr.x1]="line[0].x" [attr.y1]="line[0].y" [attr.x2]="line[1].x" [attr.y2]="line[1].y" stroke="black" />
+
+</svg>
+
+<button (click)="saveSvg()">save svg</button>
