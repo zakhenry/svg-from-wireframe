@@ -17,7 +17,13 @@
     "lib": [
       "es2018",
       "dom"
-    ]
+    ],
+    "paths": {
+      "wireframe-svg": [
+        "dist/wireframe-svg/wireframe-svg",
+        "dist/wireframe-svg"
+      ]
+    }
   },
   "angularCompilerOptions": {
     "fullTemplateTypeCheck": true,

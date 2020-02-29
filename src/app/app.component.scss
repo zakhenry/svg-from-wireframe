@@ -1,0 +1,17 @@
+canvas {
+  touch-action: none;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.container {
+  position: relative;
+}
+
+.pointer {
+  width: 10px;
+  height: 10px;
+  background: red;
+  position: absolute;
+}

@@ -123,6 +123,46 @@
           }
         }
       }
+    },
+    "wireframe-svg": {
+      "projectType": "library",
+      "root": "projects/wireframe-svg",
+      "sourceRoot": "projects/wireframe-svg/src",
+      "prefix": "lib",
+      "architect": {
+        "build": {
+          "builder": "@angular-devkit/build-ng-packagr:build",
+          "options": {
+            "tsConfig": "projects/wireframe-svg/tsconfig.lib.json",
+            "project": "projects/wireframe-svg/ng-package.json"
+          },
+          "configurations": {
+            "production": {
+              "tsConfig": "projects/wireframe-svg/tsconfig.lib.prod.json"
+            }
+          }
+        },
+        "test": {
+          "builder": "@angular-devkit/build-angular:karma",
+          "options": {
+            "main": "projects/wireframe-svg/src/test.ts",
+            "tsConfig": "projects/wireframe-svg/tsconfig.spec.json",
+            "karmaConfig": "projects/wireframe-svg/karma.conf.js"
+          }
+        },
+        "lint": {
+          "builder": "@angular-devkit/build-angular:tslint",
+          "options": {
+            "tsConfig": [
+              "projects/wireframe-svg/tsconfig.lib.json",
+              "projects/wireframe-svg/tsconfig.spec.json"
+            ],
+            "exclude": [
+              "**/node_modules/**"
+            ]
+          }
+        }
+      }
     }},
   "defaultProject": "wireframe-svg-maker"
 }
