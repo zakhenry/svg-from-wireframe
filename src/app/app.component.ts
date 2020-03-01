@@ -13,7 +13,7 @@ import {
   Camera, Color3, Color4,
   Engine,
   HemisphericLight, LinesMesh, Material,
-  Matrix,
+  Matrix, MeshBuilder, Ray, RayHelper,
   Scene, StandardMaterial,
   Vector3,
   VertexBuffer,
@@ -73,7 +73,7 @@ export class AppComponent implements AfterViewInit {
     camera.attachControl(canvasElement, false, true, 1);
     // (camera.inputs.attached.pointers as any).buttons = [1, 2];
 
-    const ortho = true;
+    const ortho = false;
     if (ortho) {
 
       camera.mode = Camera.ORTHOGRAPHIC_CAMERA;
@@ -132,6 +132,7 @@ export class AppComponent implements AfterViewInit {
       const material = new StandardMaterial(res.id + 'mat', scene);
       material.diffuseColor = Color3.White();
       material.sideOrientation = Material.CounterClockWiseSideOrientation;
+      material.alpha = 0.5;
       mesh.material = material;
 
       mesh.rotate(Vector3.Left(), Math.PI / 2);
@@ -149,16 +150,45 @@ export class AppComponent implements AfterViewInit {
 
       }
 
+      const nowhere = new Vector3(1000, 1000, 1000);
+      const intersections = Array.from({length: lines.length * 2}).map((_, i) => {
+        const mesh = MeshBuilder.CreateBox('intersection'+i, {size: 1});
+        mesh.position = nowhere;
+        mesh.parent = edgesMesh;
+        return mesh;
+      });
+
+
       this.lines$$.next(render$.pipe(map(() => {
         const worldMatrix = edgesMesh.getWorldMatrix();
         const transformMatrix = scene.getTransformMatrix();
         const viewport = scene.activeCamera.viewport;
 
-        return lines.map((line) => {
+        return lines.map((line, i) => {
 
-          return line.map(v => {
+          return line.map((v, j) => {
 
             const coordinates = Vector3.Project(v, worldMatrix, transformMatrix, viewport);
+
+            // if (i ==0 && j==0) {
+
+              const ray = Ray.CreateNewFromTo(camera.globalPosition, Vector3.TransformCoordinates(v, worldMatrix));
+
+              // RayHelper.CreateAndShow(ray, scene, new Color3(0, 0, 0.8));
+
+              const pick = ray.intersectsMesh(mesh);
+
+
+              // camera      pick  point
+              // X-----------|-----*
+              if (pick.hit && ray.length - pick.distance > 0.01) {
+                intersections[i*2+j].position = nowhere;
+              } else {
+                intersections[i*2+j].position = v;
+              }
+            // }
+
+
             return {
               x: canvasElement.width * coordinates.x,
               y: canvasElement.height * coordinates.y,
