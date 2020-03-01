@@ -73,14 +73,14 @@ export class AppComponent implements AfterViewInit {
     camera.attachControl(canvasElement, false, true, 1);
     // (camera.inputs.attached.pointers as any).buttons = [1, 2];
 
-    const ortho = false;
+    const ortho = true;
     if (ortho) {
 
       camera.mode = Camera.ORTHOGRAPHIC_CAMERA;
 
       camera.minZ = -10000;
       camera.maxZ = 10000;
-      let orthoFrustrum = 200;
+      let orthoFrustrum = 20;
       const ratio = canvasElement.clientWidth / canvasElement.clientHeight;
       const computeOrthoCameraView = () => {
         camera.orthoLeft = (-ratio * orthoFrustrum) / 2;
@@ -101,14 +101,6 @@ export class AppComponent implements AfterViewInit {
 
       canvasElement.addEventListener('wheel', wheelListener, false);
     }
-
-    canvasElement.addEventListener('click', () => {
-      // We try to pick an object
-      const pickResult = scene.pick(scene.pointerX, scene.pointerY);
-
-      console.log(`pickResult`, pickResult);
-
-    });
 
     // This creates a light, aiming 0,1,0 - to the sky (non-mesh)
     const light = new HemisphericLight('light', new Vector3(0, 1, 0), scene);
@@ -151,13 +143,12 @@ export class AppComponent implements AfterViewInit {
       }
 
       const nowhere = new Vector3(1000, 1000, 1000);
-      const intersections = Array.from({length: lines.length * 2}).map((_, i) => {
-        const mesh = MeshBuilder.CreateBox('intersection'+i, {size: 1});
+      const intersections = Array.from({ length: lines.length * 2 }).map((_, i) => {
+        const mesh = MeshBuilder.CreateBox('intersection' + i, { size: .3 });
         mesh.position = nowhere;
         mesh.parent = edgesMesh;
         return mesh;
       });
-
 
       this.lines$$.next(render$.pipe(map(() => {
         const worldMatrix = edgesMesh.getWorldMatrix();
@@ -170,24 +161,30 @@ export class AppComponent implements AfterViewInit {
 
             const coordinates = Vector3.Project(v, worldMatrix, transformMatrix, viewport);
 
-            // if (i ==0 && j==0) {
+            const start = Vector3.Unproject(
+              new Vector3(coordinates.x * canvasElement.clientWidth, coordinates.y * canvasElement.clientHeight, 0),
+              engine.getRenderWidth(),
+              engine.getRenderHeight(),
+              Matrix.Identity(),
+              scene.getViewMatrix(),
+              scene.getProjectionMatrix(),
+            );
 
-              const ray = Ray.CreateNewFromTo(camera.globalPosition, Vector3.TransformCoordinates(v, worldMatrix));
+            const ray = Ray.CreateNewFromTo(start, Vector3.TransformCoordinates(v, worldMatrix));
 
-              // RayHelper.CreateAndShow(ray, scene, new Color3(0, 0, 0.8));
-
-              const pick = ray.intersectsMesh(mesh);
-
-
-              // camera      pick  point
-              // X-----------|-----*
-              if (pick.hit && ray.length - pick.distance > 0.01) {
-                intersections[i*2+j].position = nowhere;
-              } else {
-                intersections[i*2+j].position = v;
-              }
+            // if (i == 0 && j == 0) {
+            //   RayHelper.CreateAndShow(ray, scene, new Color3(0, 0, 0.8));
             // }
 
+            const pick = ray.intersectsMesh(mesh);
+
+            // camera      pick  point
+            // X-----------|-----*
+            if (pick.hit && ray.length - pick.distance > 0.01) {
+              intersections[i * 2 + j].position = nowhere;
+            } else {
+              intersections[i * 2 + j].position = v;
+            }
 
             return {
               x: canvasElement.width * coordinates.x,
