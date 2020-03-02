@@ -5,7 +5,7 @@
 <svg #svg attr.viewBox="0 0 {{canvas.width}} {{canvas.height}}" xmlns="http://www.w3.org/2000/svg">
 
 
-  <svg:line *ngFor="let line of lines$ | async" [attr.x1]="line[0].x" [attr.y1]="line[0].y" [attr.x2]="line[1].x" [attr.y2]="line[1].y" stroke="black" />
+  <svg:line *ngFor="let line of lines$ | async as lines; let i = index;" stroke-width="2" [attr.stroke]="'hsl('+(i%2 ? i/lines.length : 1 - i/lines.length) * 360 +', 100%, 50%)'" [attr.x1]="line[0].x" [attr.y1]="line[0].y" [attr.x2]="line[1].x" [attr.y2]="line[1].y" />
 
 </svg>
 

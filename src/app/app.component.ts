@@ -10,17 +10,27 @@ import {
 } from '@angular/core';
 import {
   ArcRotateCamera,
-  Camera, Color3, Color4,
+  Camera,
+  Color3,
+  Color4,
   Engine,
-  HemisphericLight, LinesMesh, Material,
-  Matrix, MeshBuilder, Ray, RayHelper,
-  Scene, StandardMaterial,
+  HemisphericLight,
+  Material,
+  Matrix,
+  MeshBuilder,
+  Ray,
+  Scene,
+  StandardMaterial,
+  Vector2,
   Vector3,
   VertexBuffer,
 } from '@babylonjs/core';
 import { Observable, Subject } from 'rxjs';
-import { map, shareReplay, startWith, switchAll, tap } from 'rxjs/operators';
-import { createMesh, createMeshPair, MeshAssetData, MeshPairData } from './load-mesh';
+import { map, startWith, switchAll, tap } from 'rxjs/operators';
+import { getIntersectionPointFast } from './compute-intersection';
+import { dedupeLines } from './dedupe-lines';
+import { LineSegment } from './interfaces';
+import { createMeshPair, MeshPairData } from './load-mesh';
 
 @Component({
   selector: 'app-root',
@@ -143,7 +153,7 @@ export class AppComponent implements AfterViewInit {
       }
 
       const nowhere = new Vector3(1000, 1000, 1000);
-      const intersections = Array.from({ length: lines.length * 2 }).map((_, i) => {
+      const intersectionMeshes = Array.from({ length: lines.length * 2 }).map((_, i) => {
         const mesh = MeshBuilder.CreateBox('intersection' + i, { size: .3 });
         mesh.position = nowhere;
         mesh.parent = edgesMesh;
@@ -155,7 +165,7 @@ export class AppComponent implements AfterViewInit {
         const transformMatrix = scene.getTransformMatrix();
         const viewport = scene.activeCamera.viewport;
 
-        return lines.map((line, i) => {
+        const screenSpaceLines = lines.map((line, i) => {
 
           return line.map((v, j) => {
 
@@ -176,21 +186,85 @@ export class AppComponent implements AfterViewInit {
             //   RayHelper.CreateAndShow(ray, scene, new Color3(0, 0, 0.8));
             // }
 
-            const pick = ray.intersectsMesh(mesh);
+            const pick = ray.intersectsMesh(mesh as any);
 
             // camera      pick  point
             // X-----------|-----*
             if (pick.hit && ray.length - pick.distance > 0.01) {
-              intersections[i * 2 + j].position = nowhere;
+              intersectionMeshes[i * 2 + j].position = nowhere;
             } else {
-              intersections[i * 2 + j].position = v;
+              intersectionMeshes[i * 2 + j].position = v;
             }
 
-            return {
-              x: canvasElement.width * coordinates.x,
-              y: canvasElement.height * coordinates.y,
-            };
+            return new Vector2(
+              canvasElement.width * coordinates.x,
+              canvasElement.height * coordinates.y,
+            );
           });
+
+        }).filter(dedupeLines) as LineSegment[];
+
+        // const intersections: Vector2[] = [];
+        const intersectionsMap: Map<number, Vector2[]> = new Map();
+
+        // eep, this is O(N^2)
+        for (let b = 0; b < screenSpaceLines.length; b++) {
+
+          for (let a = b + 1; a < screenSpaceLines.length; a++) {
+
+            const lineA = screenSpaceLines[a];
+            const lineB = screenSpaceLines[b];
+
+            const intersection = getIntersectionPointFast(lineA, lineB);
+
+            if (intersection) {
+              [a, b].forEach(p => {
+                if (!intersectionsMap.has(p)) {
+                  intersectionsMap.set(p, []);
+                }
+                intersectionsMap.get(p).push(intersection);
+              });
+              // intersections.push(intersection);
+            }
+
+          }
+
+        }
+
+        // console.log(intersectionsMap);
+
+        return screenSpaceLines.flatMap((line, index) => {
+
+          if (!intersectionsMap.has(index)) {
+            return [line];
+          }
+
+          const lineIntersections = intersectionsMap.get(index);
+
+          if (lineIntersections.length === 1) {
+            return [
+              [line[0], lineIntersections[0]],
+              [line[1], lineIntersections[0]],
+            ];
+          }
+
+          const sortedIntersections = lineIntersections.map(intersection => {
+            return {
+              intersection, distance: Vector2.DistanceSquared(line[0], intersection),
+            };
+          }).sort((a, b) => a.distance - b.distance);
+
+          const newSegments = [
+            [line[0], sortedIntersections[0].intersection],
+            ...sortedIntersections.map((intersection, i, allIntersections) => {
+              return [
+                intersection.intersection,
+                i === allIntersections.length - 1 ? line[1] : allIntersections[i + 1].intersection,
+              ];
+            }),
+          ];
+
+          return newSegments;
 
         });
 
