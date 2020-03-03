@@ -17,7 +17,7 @@ import {
   HemisphericLight,
   Material,
   Matrix,
-  MeshBuilder,
+  MeshBuilder, Plane,
   Ray,
   Scene,
   StandardMaterial,
@@ -31,6 +31,12 @@ import { getIntersectionPointFast } from './compute-intersection';
 import { dedupeLines } from './dedupe-lines';
 import { LineSegment } from './interfaces';
 import { createMeshPair, MeshPairData } from './load-mesh';
+
+
+interface SvgLines {
+  obscured: LineSegment[]  ;
+  visible: LineSegment[]  ;
+}
 
 @Component({
   selector: 'app-root',
@@ -48,7 +54,7 @@ export class AppComponent implements AfterViewInit {
   }
 
   private lines$$ = new Subject();
-  public lines$ = this.lines$$.pipe(switchAll());
+  public lines$: Observable<SvgLines> = this.lines$$.pipe(switchAll());
 
   public ngAfterViewInit() {
 
@@ -125,7 +131,11 @@ export class AppComponent implements AfterViewInit {
 
     this.zone.runOutsideAngular(() => engine.runRenderLoop(() => scene.render()));
 
-    this.http.get<MeshPairData>('/assets/slotted-cube.json').pipe(tap((res) => {
+
+    const model = 'slotted-cube';
+    // const model = 'raspi';
+
+    this.http.get<MeshPairData>(`/assets/${model}.json`).pipe(tap((res) => {
 
       const { mesh, edgesMesh } = createMeshPair(scene, res);
       edgesMesh.color = Color3.Black();
@@ -165,9 +175,9 @@ export class AppComponent implements AfterViewInit {
         const transformMatrix = scene.getTransformMatrix();
         const viewport = scene.activeCamera.viewport;
 
-        const screenSpaceLines = lines.map((line, i) => {
+        const projectedLines = lines.map((viewSpace, i) => {
 
-          return line.map((v, j) => {
+          const screenSpace = viewSpace.map((v, j) => {
 
             const coordinates = Vector3.Project(v, worldMatrix, transformMatrix, viewport);
 
@@ -200,20 +210,22 @@ export class AppComponent implements AfterViewInit {
               canvasElement.width * coordinates.x,
               canvasElement.height * coordinates.y,
             );
-          });
+          }) as LineSegment;
 
-        }).filter(dedupeLines) as LineSegment[];
+          return {screenSpace, viewSpace};
+
+        }).filter((line, i, allLines) => dedupeLines(line.screenSpace, i, allLines.map(l => l.screenSpace)))
 
         // const intersections: Vector2[] = [];
         const intersectionsMap: Map<number, Vector2[]> = new Map();
 
         // eep, this is O(N^2)
-        for (let b = 0; b < screenSpaceLines.length; b++) {
+        for (let b = 0; b < projectedLines.length; b++) {
 
-          for (let a = b + 1; a < screenSpaceLines.length; a++) {
+          for (let a = b + 1; a < projectedLines.length; a++) {
 
-            const lineA = screenSpaceLines[a];
-            const lineB = screenSpaceLines[b];
+            const lineA = projectedLines[a].screenSpace;
+            const lineB = projectedLines[b].screenSpace;
 
             const intersection = getIntersectionPointFast(lineA, lineB);
 
@@ -233,42 +245,70 @@ export class AppComponent implements AfterViewInit {
 
         // console.log(intersectionsMap);
 
-        return screenSpaceLines.flatMap((line, index) => {
+        const culled = projectedLines.flatMap((projected, index) => {
 
-          if (!intersectionsMap.has(index)) {
-            return [line];
-          }
+          const line = projected.screenSpace;
 
-          const lineIntersections = intersectionsMap.get(index);
-
-          if (lineIntersections.length === 1) {
-            return [
-              [line[0], lineIntersections[0]],
-              [line[1], lineIntersections[0]],
-            ];
-          }
-
-          const sortedIntersections = lineIntersections.map(intersection => {
+          const sortedIntersections = !intersectionsMap.has(index) ? [] : intersectionsMap.get(index).map(intersection => {
             return {
               intersection, distance: Vector2.DistanceSquared(line[0], intersection),
             };
-          }).sort((a, b) => a.distance - b.distance);
+          })
+            .sort((a, b) => a.distance - b.distance)
+            .map(i => i.intersection);
 
-          const newSegments = [
-            [line[0], sortedIntersections[0].intersection],
-            ...sortedIntersections.map((intersection, i, allIntersections) => {
-              return [
-                intersection.intersection,
-                i === allIntersections.length - 1 ? line[1] : allIntersections[i + 1].intersection,
-              ];
-            }),
-          ];
+          const candidateNodes: Vector2[] = [line[0], ...sortedIntersections, line[1]];
 
-          return newSegments;
+          let currentObscured = null;
+
+          const results: Array<{obscured: boolean, line: LineSegment}> = [];
+
+          let currentCandidate: LineSegment = [candidateNodes[0], candidateNodes[1]];
+
+          candidateNodes.forEach((node, i, allNodes) => {
+
+            if (i===allNodes.length-1) {
+              return;
+            }
+
+            const testLine: LineSegment = [node, allNodes[i+1]];
+            const obscured = i % 2 === 0; // @todo test if actually obscured
+
+            if (currentObscured === null) {
+              currentObscured = obscured;
+            }
+
+            if (obscured != currentObscured) {
+              results.push({line: currentCandidate, obscured: currentObscured});
+              currentObscured = obscured;
+              currentCandidate = testLine;
+            } else {
+              // extend current candidate
+              currentCandidate[1] = testLine[1]
+            }
+
+          });
+
+          results.push({line: currentCandidate, obscured: currentObscured});
+
+          return results;
 
         });
 
+      return culled.reduce((svgLines: SvgLines, line) => {
+
+        if (line.obscured) {
+          svgLines.obscured.push(line.line)
+        } else {
+          svgLines.visible.push(line.line)
+        }
+
+        return svgLines;
+
+      }, { visible: [], obscured: []});
+
       })));
+
 
     })).subscribe();
 
