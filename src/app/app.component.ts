@@ -132,8 +132,9 @@ export class AppComponent implements AfterViewInit {
     this.zone.runOutsideAngular(() => engine.runRenderLoop(() => scene.render()));
 
 
-    const model = 'slotted-cube';
+    // const model = 'slotted-cube';
     // const model = 'raspi';
+    const model = 'diamond';
 
     this.http.get<MeshPairData>(`/assets/${model}.json`).pipe(tap((res) => {
 
@@ -322,7 +323,7 @@ export class AppComponent implements AfterViewInit {
               // RayHelper.CreateAndShow(ray, scene, new Color3(0, 0, 0.8));
             }
 
-            const obscured = pick.hit && ray.length - pick.distance > 0.01;
+            const obscured = pick.hit && ray.length - pick.distance > 0.1;
 
             if (currentObscured === null) {
               currentObscured = obscured;
