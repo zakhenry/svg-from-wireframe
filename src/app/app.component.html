@@ -6,8 +6,13 @@
 <svg #svg attr.viewBox="0 0 {{canvas.width}} {{canvas.height}}" xmlns="http://www.w3.org/2000/svg">
 
   <ng-container *ngIf="lines$ | async as lines">
-    <svg:line *ngFor="let line of lines.visible as visibleLines; let i = index;" stroke-width="2" [attr.stroke]="'hsl('+(i%2 ? i/visibleLines.length : 1 - i/visibleLines.length) * 360 +', 100%, 50%)'" [attr.x1]="line[0].x" [attr.y1]="line[0].y" [attr.x2]="line[1].x" [attr.y2]="line[1].y" />
-    <svg:line *ngFor="let line of lines.obscured;" stroke-width="2" stroke="grey"  [attr.x1]="line[0].x" [attr.y1]="line[0].y" [attr.x2]="line[1].x" [attr.y2]="line[1].y" />
+<!--    debug-->
+<!--    <svg:line *ngFor="let line of lines.visible as visibleLines; let i = index;" stroke-width="2" [attr.stroke]="'hsl('+(i%2 ? i/visibleLines.length : 1 - i/visibleLines.length) * 360 +', 100%, 50%)'" [attr.x1]="line[0].x" [attr.y1]="line[0].y" [attr.x2]="line[1].x" [attr.y2]="line[1].y" />-->
+<!--    <svg:line *ngFor="let line of lines.obscured;" stroke-width="2" stroke="grey"  [attr.x1]="line[0].x" [attr.y1]="line[0].y" [attr.x2]="line[1].x" [attr.y2]="line[1].y" />-->
+
+    <svg:line *ngFor="let line of lines.obscured;" stroke-width="1" stroke="lightgrey"  [attr.x1]="line[0].x" [attr.y1]="line[0].y" [attr.x2]="line[1].x" [attr.y2]="line[1].y" />
+    <svg:line *ngFor="let line of lines.visible; let i = index;" stroke-width="2"  stroke="black" [attr.x1]="line[0].x" [attr.y1]="line[0].y" [attr.x2]="line[1].x" [attr.y2]="line[1].y" />
+
   </ng-container>
 
 
