@@ -134,7 +134,8 @@ export class AppComponent implements AfterViewInit {
 
     // const model = 'slotted-cube';
     // const model = 'raspi';
-    const model = 'diamond';
+    // const model = 'diamond';
+    const model = 'brick';
 
     this.http.get<MeshPairData>(`/assets/${model}.json`).pipe(tap((res) => {
 
