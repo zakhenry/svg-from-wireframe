@@ -9,6 +9,7 @@ import {
   Renderer2,
   ViewChild,
 } from '@angular/core';
+import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
 import {
   ArcRotateCamera,
   Camera,
@@ -23,9 +24,10 @@ import {
   VertexBuffer,
 } from '@babylonjs/core';
 import { Observable, Subject } from 'rxjs';
-import { map, startWith, switchAll, tap } from 'rxjs/operators';
+import { filter, map, pairwise, startWith, switchAll, switchMap, tap } from 'rxjs/operators';
 import { createMeshPair, MeshPairData } from './load-mesh';
 import { viewSpaceLinesToScreenSpaceLines, ScreenSpaceLines } from './mesh-to-screen-space';
+import { screenSpaceLinesToSvg } from './screen-space-lines-to-svg';
 
 @Component({
   selector: 'app-root',
@@ -35,17 +37,49 @@ import { viewSpaceLinesToScreenSpaceLines, ScreenSpaceLines } from './mesh-to-sc
 })
 export class AppComponent implements AfterViewInit {
   title = 'wireframe-svg-maker';
+  svgVisible = true;
 
   @ViewChild('canvas') canvas: ElementRef;
   @ViewChild('svg') svg: ElementRef;
 
-  constructor(private zone: NgZone, private http: HttpClient, private renderer: Renderer2, private cd: ChangeDetectorRef) {
+  constructor(
+    private zone: NgZone,
+    private http: HttpClient,
+    private renderer: Renderer2,
+    private cd: ChangeDetectorRef,
+    private sanitizer: DomSanitizer) {
+  }
+
+  public toggleSvgVisible(): void {
+    this.svgVisible = !this.svgVisible;
   }
 
   private lines$$ = new Subject();
   public lines$: Observable<ScreenSpaceLines> = this.lines$$.pipe(switchAll(), tap<ScreenSpaceLines>(() => {
     this.cd.detectChanges();
   }));
+
+  public svg$: Observable<SafeUrl> = this.lines$.pipe(
+    map((lines) => {
+
+      const svg = screenSpaceLinesToSvg(lines, this.canvas.nativeElement.width, this.canvas.nativeElement.height);
+
+      const svgXml = svg.outerHTML;
+
+      return URL.createObjectURL(new Blob([svgXml], {type : 'image/svg+xml'}));
+    }),
+    startWith(null),
+    pairwise(),
+    map(([previous, current]) => {
+      if (previous) {
+        setTimeout(() => URL.revokeObjectURL(previous));
+      }
+
+
+      return this.sanitizer.bypassSecurityTrustUrl(current);
+    }),
+    filter(url => !!url)
+  );
 
   public ngAfterViewInit() {
 
@@ -179,19 +213,10 @@ export class AppComponent implements AfterViewInit {
 
   }
 
-  public saveSvg() {
-    console.log({ svg: this.svg.nativeElement });
-
-    const blob = new Blob(
-      [this.svg.nativeElement.outerHTML],
-      {
-        type: 'text/plain;charset=utf-8',
-      },
-    );
-
+  public saveSvg(url: SafeUrl) {
     const link = this.renderer.createElement('a');
     link.style.display = 'none';
-    link.href = URL.createObjectURL(blob);
+    link.href = (url as any).changingThisBreaksApplicationSecurity;
     link.download = 'wireframe.svg';
     link.dispatchEvent(new MouseEvent(`click`, { bubbles: true, cancelable: true, view: window }));
   }
