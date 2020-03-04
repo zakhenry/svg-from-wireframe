@@ -1,7 +1,8 @@
 import { HttpClient } from '@angular/common/http';
 import {
   AfterViewInit,
-  ChangeDetectionStrategy, ChangeDetectorRef,
+  ChangeDetectionStrategy,
+  ChangeDetectorRef,
   Component,
   ElementRef,
   NgZone,
@@ -16,26 +17,15 @@ import {
   Engine,
   HemisphericLight,
   Material,
-  Matrix,
-  MeshBuilder, Plane,
-  Ray, RayHelper,
   Scene,
   StandardMaterial,
-  Vector2,
   Vector3,
   VertexBuffer,
 } from '@babylonjs/core';
 import { Observable, Subject } from 'rxjs';
 import { map, startWith, switchAll, tap } from 'rxjs/operators';
-import { getIntersectionPointFast } from './compute-intersection';
-import { dedupeLines } from './dedupe-lines';
-import { LineSegment } from './interfaces';
 import { createMeshPair, MeshPairData } from './load-mesh';
-
-interface SvgLines {
-  obscured: LineSegment[];
-  visible: LineSegment[];
-}
+import { viewSpaceLinesToScreenSpaceLines, ScreenSpaceLines } from './mesh-to-screen-space';
 
 @Component({
   selector: 'app-root',
@@ -53,7 +43,7 @@ export class AppComponent implements AfterViewInit {
   }
 
   private lines$$ = new Subject();
-  public lines$: Observable<SvgLines> = this.lines$$.pipe(switchAll(), tap<SvgLines>(() => {
+  public lines$: Observable<ScreenSpaceLines> = this.lines$$.pipe(switchAll(), tap<ScreenSpaceLines>(() => {
     this.cd.detectChanges();
   }));
 
@@ -165,200 +155,21 @@ export class AppComponent implements AfterViewInit {
 
       }
 
-      const nowhere = new Vector3(1000, 1000, 1000);
-      const intersectionMesh = MeshBuilder.CreateBox('intersection', { size: .3 });
-      intersectionMesh.position = nowhere;
-      intersectionMesh.parent = edgesMesh;
-
-      const intersectionMeshes = new Map();
-      const getIntersectionMesh = key => {
-        if (!intersectionMeshes.has(key)) {
-          const newMesh = intersectionMesh.createInstance(key);
-          newMesh.parent = edgesMesh;
-          intersectionMeshes.set(key, newMesh);
-        }
-        return intersectionMeshes.get(key);
-      };
-
       this.lines$$.next(render$.pipe(map(() => {
-        const worldMatrix = edgesMesh.getWorldMatrix();
-        const transformMatrix = scene.getTransformMatrix();
-        const viewport = scene.activeCamera.viewport;
-
-        const projectedLines = lines.map((viewSpace, i) => {
-
-          const screenSpace = viewSpace.map((v, j) => {
-
-            const coordinates = Vector3.Project(v, worldMatrix, transformMatrix, viewport);
-            //
-            // const start = Vector3.Unproject(
-            //   new Vector3(coordinates.x * canvasElement.clientWidth, coordinates.y * canvasElement.clientHeight, 0),
-            //   engine.getRenderWidth(),
-            //   engine.getRenderHeight(),
-            //   Matrix.Identity(),
-            //   scene.getViewMatrix(),
-            //   scene.getProjectionMatrix(),
-            // );
-            //
-            // const ray = Ray.CreateNewFromTo(start, Vector3.TransformCoordinates(v, worldMatrix));
-            //
-            // // if (i == 0 && j == 0) {
-            // //   RayHelper.CreateAndShow(ray, scene, new Color3(0, 0, 0.8));
-            // // }
-            //
-            // const pick = ray.intersectsMesh(mesh as any);
-            //
-            // // camera      pick  point
-            // // X-----------|-----*
-            // if (pick.hit && ray.length - pick.distance > 0.01) {
-            //   intersectionMeshes[i * 2 + j].position = nowhere;
-            // } else {
-            //   intersectionMeshes[i * 2 + j].position = v;
-            // }
-
-            return new Vector2(
-              canvasElement.width * coordinates.x,
-              canvasElement.height * coordinates.y,
-            );
-          }) as LineSegment;
-
-          return { screenSpace, viewSpace };
-
-        }).filter((line, i, allLines) => dedupeLines(line.screenSpace, i, allLines.map(l => l.screenSpace)));
-
-        // const intersections: Vector2[] = [];
-        const intersectionsMap: Map<number, Vector2[]> = new Map();
-
-        // eep, this is O(N^2)
-        for (let b = 0; b < projectedLines.length; b++) {
-
-          for (let a = b + 1; a < projectedLines.length; a++) {
-
-            const lineA = projectedLines[a].screenSpace;
-            const lineB = projectedLines[b].screenSpace;
-
-            const intersection = getIntersectionPointFast(lineA, lineB);
-
-            if (intersection) {
-              [a, b].forEach(p => {
-                if (!intersectionsMap.has(p)) {
-                  intersectionsMap.set(p, []);
-                }
-                intersectionsMap.get(p).push(intersection);
-              });
-              // intersections.push(intersection);
-            }
-
-          }
-
-        }
-
-        // console.log(intersectionsMap);
-
-        const culled = projectedLines.flatMap((projected, index) => {
-
-          const line = projected.screenSpace;
-
-          const screenSpaceDistance = Vector2.Distance(line[0], line[1]);
-
-          const sortedIntersections = !intersectionsMap.has(index) ? [] : intersectionsMap.get(index).map(point => {
-            return {
-              point, distance: Vector2.Distance(line[0], point),
-            };
-          })
-            .sort((a, b) => a.distance - b.distance);
-
-          const candidateNodes = [
-            { distance: 0, point: line[0] },
-            ...sortedIntersections,
-            { distance: screenSpaceDistance, point: line[1] },
-          ];
-
-          let currentObscured = null;
-
-          const results: Array<{ obscured: boolean, line: LineSegment }> = [];
-
-          let currentCandidate = [candidateNodes[0], candidateNodes[1]];
-
-          const testIndex = 20;
-          if (index == testIndex) {
-            const testDisplayStart = getIntersectionMesh(`culled${index}start`);
-            testDisplayStart.position = projected.viewSpace[0];
-            const testDisplayEnd = getIntersectionMesh(`culled${index}end`);
-            testDisplayEnd.position = projected.viewSpace[1];
-          }
-
-          candidateNodes.forEach((node, i, allNodes) => {
-
-            if (i === allNodes.length - 1) {
-              return;
-            }
-
-            const testLine = [node, allNodes[i + 1]];
-
-            const startScale = testLine[0].distance / screenSpaceDistance;
-            const endScale = testLine[1].distance / screenSpaceDistance;
-            const scale = endScale - (endScale - startScale) / 2;
-
-            const testPointScreenSpace = Vector2.Lerp(testLine[0].point, testLine[1].point, scale);
-            const testPointViewSpace = Vector3.Lerp(projected.viewSpace[0], projected.viewSpace[1], scale);
-
-            if (index == testIndex) {
-              const testDisplay = getIntersectionMesh(`culled${index}candiate${i}`);
-              testDisplay.position = testLine[1].point;
-            }
-
-            const start = Vector3.Unproject(
-              new Vector3(testPointScreenSpace.x, testPointScreenSpace.y, 0),
-              engine.getRenderWidth(),
-              engine.getRenderHeight(),
-              Matrix.Identity(),
-              scene.getViewMatrix(),
-              scene.getProjectionMatrix(),
-            );
-
-            // const ray = Ray.CreateNewFromTo(start, Vector3.TransformCoordinates(testPointViewSpace, worldMatrix));
-            const ray = Ray.CreateNewFromTo(start, Vector3.TransformCoordinates(testPointViewSpace, worldMatrix));
+        return viewSpaceLinesToScreenSpaceLines(
+          lines,
+          edgesMesh.getWorldMatrix(),
+          scene.getTransformMatrix(),
+          scene.getViewMatrix(),
+          scene.getProjectionMatrix(),
+          scene.activeCamera.viewport,
+          scene.getEngine().getRenderWidth(),
+          scene.getEngine().getRenderHeight(),
+          ray => {
             const pick = ray.intersectsMesh(mesh as any);
 
-            if (index == testIndex) {
-              // RayHelper.CreateAndShow(ray, scene, new Color3(0, 0, 0.8));
-            }
-
-            const obscured = pick.hit && ray.length - pick.distance > 0.1;
-
-            if (currentObscured === null) {
-              currentObscured = obscured;
-            }
-
-            if (obscured === currentObscured) {
-              // extend current candidate
-              currentCandidate[1] = testLine[1];
-            } else {
-              results.push({ line: [currentCandidate[0].point, currentCandidate[1].point], obscured: currentObscured });
-              currentObscured = obscured;
-              currentCandidate = testLine;
-            }
-
+            return pick.hit && ray.length - pick.distance > 0.1;
           });
-
-          results.push({ line: [currentCandidate[0].point, currentCandidate[1].point], obscured: currentObscured });
-
-          return results;
-
-        });
-
-        return culled.reduce((svgLines: SvgLines, line) => {
-
-          if (line.obscured) {
-            svgLines.obscured.push(line.line);
-          } else {
-            svgLines.visible.push(line.line);
-          }
-
-          return svgLines;
-
-        }, { visible: [], obscured: [] });
 
       })));
 
