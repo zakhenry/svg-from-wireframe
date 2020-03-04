@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import {
   AfterViewInit,
-  ChangeDetectionStrategy,
+  ChangeDetectionStrategy, ChangeDetectorRef,
   Component,
   ElementRef,
   NgZone,
@@ -32,10 +32,9 @@ import { dedupeLines } from './dedupe-lines';
 import { LineSegment } from './interfaces';
 import { createMeshPair, MeshPairData } from './load-mesh';
 
-
 interface SvgLines {
-  obscured: LineSegment[]  ;
-  visible: LineSegment[]  ;
+  obscured: LineSegment[];
+  visible: LineSegment[];
 }
 
 @Component({
@@ -50,11 +49,13 @@ export class AppComponent implements AfterViewInit {
   @ViewChild('canvas') canvas: ElementRef;
   @ViewChild('svg') svg: ElementRef;
 
-  constructor(private zone: NgZone, private http: HttpClient, private renderer: Renderer2) {
+  constructor(private zone: NgZone, private http: HttpClient, private renderer: Renderer2, private cd: ChangeDetectorRef) {
   }
 
   private lines$$ = new Subject();
-  public lines$: Observable<SvgLines> = this.lines$$.pipe(switchAll());
+  public lines$: Observable<SvgLines> = this.lines$$.pipe(switchAll(), tap<SvgLines>(() => {
+    this.cd.detectChanges();
+  }));
 
   public ngAfterViewInit() {
 
@@ -88,6 +89,7 @@ export class AppComponent implements AfterViewInit {
     camera.wheelPrecision = 0.5;
     camera.attachControl(canvasElement, false, true, 1);
     // (camera.inputs.attached.pointers as any).buttons = [1, 2];
+    camera.useAutoRotationBehavior = true;
 
     const ortho = true;
     if (ortho) {
@@ -131,11 +133,10 @@ export class AppComponent implements AfterViewInit {
 
     this.zone.runOutsideAngular(() => engine.runRenderLoop(() => scene.render()));
 
-
-    // const model = 'slotted-cube';
+    const model = 'slotted-cube';
     // const model = 'raspi';
     // const model = 'diamond';
-    const model = 'brick';
+    // const model = 'brick';
 
     this.http.get<MeshPairData>(`/assets/${model}.json`).pipe(tap((res) => {
 
@@ -174,7 +175,7 @@ export class AppComponent implements AfterViewInit {
         if (!intersectionMeshes.has(key)) {
           const newMesh = intersectionMesh.createInstance(key);
           newMesh.parent = edgesMesh;
-          intersectionMeshes.set(key, newMesh );
+          intersectionMeshes.set(key, newMesh);
         }
         return intersectionMeshes.get(key);
       };
@@ -221,9 +222,9 @@ export class AppComponent implements AfterViewInit {
             );
           }) as LineSegment;
 
-          return {screenSpace, viewSpace};
+          return { screenSpace, viewSpace };
 
-        }).filter((line, i, allLines) => dedupeLines(line.screenSpace, i, allLines.map(l => l.screenSpace)))
+        }).filter((line, i, allLines) => dedupeLines(line.screenSpace, i, allLines.map(l => l.screenSpace)));
 
         // const intersections: Vector2[] = [];
         const intersectionsMap: Map<number, Vector2[]> = new Map();
@@ -265,17 +266,17 @@ export class AppComponent implements AfterViewInit {
               point, distance: Vector2.Distance(line[0], point),
             };
           })
-            .sort((a, b) => a.distance - b.distance)
+            .sort((a, b) => a.distance - b.distance);
 
           const candidateNodes = [
-            {distance: 0, point: line[0]},
+            { distance: 0, point: line[0] },
             ...sortedIntersections,
-            {distance: screenSpaceDistance, point: line[1]}
+            { distance: screenSpaceDistance, point: line[1] },
           ];
 
           let currentObscured = null;
 
-          const results: Array<{obscured: boolean, line: LineSegment}> = [];
+          const results: Array<{ obscured: boolean, line: LineSegment }> = [];
 
           let currentCandidate = [candidateNodes[0], candidateNodes[1]];
 
@@ -289,15 +290,15 @@ export class AppComponent implements AfterViewInit {
 
           candidateNodes.forEach((node, i, allNodes) => {
 
-            if (i===allNodes.length-1) {
+            if (i === allNodes.length - 1) {
               return;
             }
 
-            const testLine = [node, allNodes[i+1]];
+            const testLine = [node, allNodes[i + 1]];
 
             const startScale = testLine[0].distance / screenSpaceDistance;
             const endScale = testLine[1].distance / screenSpaceDistance;
-            const scale = endScale - (endScale-startScale)/2;
+            const scale = endScale - (endScale - startScale) / 2;
 
             const testPointScreenSpace = Vector2.Lerp(testLine[0].point, testLine[1].point, scale);
             const testPointViewSpace = Vector3.Lerp(projected.viewSpace[0], projected.viewSpace[1], scale);
@@ -308,7 +309,7 @@ export class AppComponent implements AfterViewInit {
             }
 
             const start = Vector3.Unproject(
-              new Vector3(testPointScreenSpace.x,testPointScreenSpace.y, 0),
+              new Vector3(testPointScreenSpace.x, testPointScreenSpace.y, 0),
               engine.getRenderWidth(),
               engine.getRenderHeight(),
               Matrix.Identity(),
@@ -332,37 +333,38 @@ export class AppComponent implements AfterViewInit {
 
             if (obscured === currentObscured) {
               // extend current candidate
-              currentCandidate[1] = testLine[1]
+              currentCandidate[1] = testLine[1];
             } else {
-              results.push({line: [currentCandidate[0].point, currentCandidate[1].point], obscured: currentObscured});
+              results.push({ line: [currentCandidate[0].point, currentCandidate[1].point], obscured: currentObscured });
               currentObscured = obscured;
               currentCandidate = testLine;
             }
 
           });
 
-          results.push({line: [currentCandidate[0].point, currentCandidate[1].point], obscured: currentObscured});
+          results.push({ line: [currentCandidate[0].point, currentCandidate[1].point], obscured: currentObscured });
 
           return results;
 
         });
 
-      return culled.reduce((svgLines: SvgLines, line) => {
+        return culled.reduce((svgLines: SvgLines, line) => {
 
-        if (line.obscured) {
-          svgLines.obscured.push(line.line)
-        } else {
-          svgLines.visible.push(line.line)
-        }
+          if (line.obscured) {
+            svgLines.obscured.push(line.line);
+          } else {
+            svgLines.visible.push(line.line);
+          }
 
-        return svgLines;
+          return svgLines;
 
-      }, { visible: [], obscured: []});
+        }, { visible: [], obscured: [] });
 
       })));
 
+    })).subscribe(() => {
 
-    })).subscribe();
+    });
 
   }
 
