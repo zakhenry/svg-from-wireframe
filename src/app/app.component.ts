@@ -27,7 +27,7 @@ import { Observable, Subject } from 'rxjs';
 import { filter, map, pairwise, startWith, switchAll, switchMap, tap } from 'rxjs/operators';
 import { createMeshPair, MeshPairData } from './load-mesh';
 import { viewSpaceLinesToScreenSpaceLines, ScreenSpaceLines } from './mesh-to-screen-space';
-import { screenSpaceLinesToSvg } from './screen-space-lines-to-svg';
+import { screenSpaceLinesToFittedSvg, screenSpaceLinesToSvg } from './screen-space-lines-to-svg';
 
 @Component({
   selector: 'app-root',
@@ -62,7 +62,7 @@ export class AppComponent implements AfterViewInit {
   public svg$: Observable<SafeUrl> = this.lines$.pipe(
     map((lines) => {
 
-      const svg = screenSpaceLinesToSvg(lines, this.canvas.nativeElement.width, this.canvas.nativeElement.height);
+      const svg = screenSpaceLinesToFittedSvg(lines);
 
       const svgXml = svg.outerHTML;
 
@@ -113,7 +113,7 @@ export class AppComponent implements AfterViewInit {
     camera.wheelPrecision = 0.5;
     camera.attachControl(canvasElement, false, true, 1);
     // (camera.inputs.attached.pointers as any).buttons = [1, 2];
-    camera.useAutoRotationBehavior = true;
+    camera.useAutoRotationBehavior = false;
 
     const ortho = true;
     if (ortho) {

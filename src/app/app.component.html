@@ -2,7 +2,6 @@
 
 <canvas #canvas></canvas>
 
-
 <ng-container *ngIf="svgVisible">
 
   <ng-container *ngIf="svg$ | async as url">
@@ -13,3 +12,4 @@
 </ng-container>
 
 <button (click)="toggleSvgVisible()">toggle svg visible</button>
+
