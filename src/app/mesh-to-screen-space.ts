@@ -1,6 +1,7 @@
 import { Matrix, Ray, Vector2, Vector3, Viewport } from '@babylonjs/core';
 import { getIntersectionPointFast } from './compute-intersection';
 import { dedupeLines } from './dedupe-lines';
+import { EdgeCandidate, findSilhouetteLines } from './find-silhouette-lines';
 import { LineSegment } from './interfaces';
 
 export interface ScreenSpaceLines {
@@ -13,15 +14,19 @@ export type OcclusionTest = (finiteLengthRay: Ray) => boolean;
 
 export function viewSpaceLinesToScreenSpaceLines(
   lines: [Vector3, Vector3][],
+  silhouetteCandidates: EdgeCandidate[],
   meshWorldMatrix: Matrix,
   sceneTransformMatrix: Matrix,
   sceneViewMatrix: Matrix,
   sceneProjectionMatrix: Matrix,
   viewport: Viewport,
+  cameraForwardVector: Vector3,
   width: number, height: number,
   isObscured: OcclusionTest,
 ): ScreenSpaceLines {
-  const identity = Matrix.Identity()
+  const identity = Matrix.Identity();
+
+  const silhouetteLines = findSilhouetteLines(silhouetteCandidates, meshWorldMatrix, cameraForwardVector);
 
   const projectedLines = lines.map((viewSpace, i) => {
 
@@ -138,7 +143,19 @@ export function viewSpaceLinesToScreenSpaceLines(
 
   });
 
-  const silhouette: LineSegment[] = [culled[0].line];
+  const silhouette: LineSegment[] = silhouetteLines.map((segment) => {
+
+    return segment.map((v) => {
+
+      const coordinates = Vector3.Project(v, meshWorldMatrix, sceneTransformMatrix, viewport);
+
+      return new Vector2(
+        width * coordinates.x,
+        height * coordinates.y,
+      );
+    }) as LineSegment;
+
+  });
 
   return culled.reduce((svgLines: ScreenSpaceLines, line) => {
 

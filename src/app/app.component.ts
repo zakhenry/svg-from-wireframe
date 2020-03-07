@@ -23,9 +23,9 @@ import {
   Vector3,
   VertexBuffer,
 } from '@babylonjs/core';
-import { Observable, Subject } from 'rxjs';
+import { BehaviorSubject, Observable, Subject } from 'rxjs';
 import { filter, map, pairwise, startWith, switchAll, switchMap, tap } from 'rxjs/operators';
-import { findSilhouetteLines } from './find-silhouette-lines';
+import { findSilhouetteLines, getSilhouetteCandidates } from './find-silhouette-lines';
 import { createMeshPair, MeshPairData } from './load-mesh';
 import { viewSpaceLinesToScreenSpaceLines, ScreenSpaceLines } from './mesh-to-screen-space';
 import { screenSpaceLinesToFittedSvg, screenSpaceLinesToSvg } from './screen-space-lines-to-svg';
@@ -40,6 +40,10 @@ export class AppComponent implements AfterViewInit {
   title = 'wireframe-svg-maker';
   svgVisible = true;
 
+  triggerRender$ = new Subject();
+
+  continousRender$ = new BehaviorSubject(false)
+
   @ViewChild('canvas') canvas: ElementRef;
   @ViewChild('svg') svg: ElementRef;
 
@@ -53,6 +57,14 @@ export class AppComponent implements AfterViewInit {
 
   public toggleSvgVisible(): void {
     this.svgVisible = !this.svgVisible;
+  }
+
+  public toggleContinuousRender(): void {
+    this.continousRender$.next(!this.continousRender$.value);
+  }
+
+  public triggerRender(): void {
+    this.triggerRender$.next();
   }
 
   private lines$$ = new Subject();
@@ -159,10 +171,14 @@ export class AppComponent implements AfterViewInit {
 
     this.zone.runOutsideAngular(() => engine.runRenderLoop(() => scene.render()));
 
-    const model = 'slotted-cube';
+    // const model = 'slotted-cube';
     // const model = 'raspi';
     // const model = 'diamond';
     // const model = 'brick';
+    // const model = 'silhouette';
+    // const model = 'blobular-intersection';
+    // const model = 'cylinder';
+    const model = 'inside-outside-cylinder';
 
     this.http.get<MeshPairData>(`/assets/${model}.json`).pipe(tap((res) => {
 
@@ -180,10 +196,8 @@ export class AppComponent implements AfterViewInit {
 
       const vertices = edgesMesh.getVerticesData(VertexBuffer.PositionKind);
 
-      findSilhouetteLines(mesh.getIndices(), mesh.getVerticesData(VertexBuffer.PositionKind), mesh, scene);
-if (1){
-  return;
-}
+      const silhouetteCandidates = getSilhouetteCandidates(mesh.getIndices(), mesh.getVerticesData(VertexBuffer.PositionKind));
+
       const lines: [Vector3, Vector3][] = [];
 
       for (let i = 0; i < vertices.length; i += 6) {
@@ -195,14 +209,18 @@ if (1){
 
       }
 
-      this.lines$$.next(render$.pipe(map(() => {
+      this.lines$$.next(this.continousRender$.pipe(
+        switchMap(continousRender => continousRender ? render$ : this.triggerRender$),
+        map(() => {
         return viewSpaceLinesToScreenSpaceLines(
           lines,
+          silhouetteCandidates,
           edgesMesh.getWorldMatrix(),
           scene.getTransformMatrix(),
           scene.getViewMatrix(),
           scene.getProjectionMatrix(),
           scene.activeCamera.viewport,
+          (scene.activeCamera as ArcRotateCamera).getFrontPosition(1),
           scene.getEngine().getRenderWidth(),
           scene.getEngine().getRenderHeight(),
           ray => {

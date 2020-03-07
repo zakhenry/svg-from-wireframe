@@ -2,6 +2,10 @@
 
 <canvas #canvas></canvas>
 
+<button (click)="toggleSvgVisible()">toggle svg visible</button>
+<button (click)="toggleContinuousRender()">toggle continuous render</button>
+<button *ngIf="!continousRender$.value" (click)="triggerRender()">trigger render</button>
+
 <ng-container *ngIf="svgVisible">
 
   <ng-container *ngIf="svg$ | async as url">
@@ -11,5 +15,4 @@
 
 </ng-container>
 
-<button (click)="toggleSvgVisible()">toggle svg visible</button>
 

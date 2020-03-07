@@ -12,33 +12,18 @@ import {
 import { FloatArray } from '@babylonjs/core/types';
 import { LineSegment } from './interfaces';
 
-export interface Facet {
-  normalWorld: Vector3;
-}
+type LineSegment3D = [Vector3, Vector3];
 
 export interface EdgeCandidate {
-  edge: LineSegment;
-  facetA: Facet;
-  facetB: Facet;
+  edge: LineSegment3D;
+  adjacentTriangleANormal: Vector3;
+  adjacentTriangleBNormal: Vector3;
 }
 
 export function getSilhouetteCandidates(
   indices: IndicesArray,
   vertices: FloatArray,
-  mesh: Mesh,
-  scene: Scene,
 ): EdgeCandidate[] {
-  return [];
-}
-
-export function findSilhouetteLines(
-  indices: IndicesArray,
-  vertices: FloatArray,
-  mesh: Mesh,
-  scene: Scene,
-): LineSegment[] {
-
-  // mesh.material.wireframe = true;
 
   const normalsData = new Float32Array(vertices.length);
 
@@ -54,40 +39,74 @@ export function findSilhouetteLines(
     positions[i] = new Vector3(vertices[i * 3], vertices[i * 3 + 1], vertices[i * 3 + 2]);
   }
 
-  const visibleNormals = [];
-  const hiddenNormals = [];
+  const adjacency = computeAdjacency(indices, vertices);
 
-  const cameraNormal = (scene.activeCamera as ArcRotateCamera).getFrontPosition(1);
-  mesh.computeWorldMatrix();
-  const transform = mesh.getWorldMatrix();
+  interface Facet {
+    normal: Vector3;
+    points: Vector3[];
+  }
 
-  positions.forEach((positionLocal, i) => {
+  const facets: Facet[] = [];
 
-    const positionWorld = Vector3.TransformCoordinates(positionLocal, transform);
-    const normalWorld = Vector3.TransformNormal(normals[i], transform);
+  for(let i=0; i<indices.length;i+=3) {
+    facets.push({
+      normal: normals[indices[i]],
+      points: [
+        positions[indices[i]],
+        positions[indices[i+1]],
+        positions[indices[i+2]],
+      ]
+    })
+  }
 
-    if (Vector3.Dot(cameraNormal, normalWorld) > 0) {
-      visibleNormals.push([positionWorld, positionWorld.add(normalWorld)]);
-    } else {
-      hiddenNormals.push([positionWorld, positionWorld.add(normalWorld)]);
+  const edgeCandidates: EdgeCandidate[] = [];
+
+  for(let i=0; i<adjacency.length; i++) {
+
+    const currentTriangleIndex = (i - i % 3) / 3;
+    const adjacentTriangleIndex = adjacency[i];
+
+    const currentFacet = facets[currentTriangleIndex];
+    const adjacentFacet = facets[adjacentTriangleIndex];
+
+    if (!adjacentFacet) {
+      continue;
     }
 
-  });
+    const matchingPoints = currentFacet.points.filter(cfp => adjacentFacet.points.some(afp => afp.equalsWithEpsilon(cfp)));
 
-  const lineSystem = MeshBuilder.CreateLineSystem("ls", {lines: visibleNormals}, scene);
-  lineSystem.color = Color3.Green();
-  const lineSystemHidden = MeshBuilder.CreateLineSystem("ls", {lines: hiddenNormals}, scene);
-  lineSystemHidden.color = Color3.Red();
+    if (matchingPoints.length !== 2) {
+      continue;
+    }
 
-  // const dbg = MeshBuilder.CreateBox('dbg', {size: 1}, scene);
-  // dbg.position = lines[0][0];
+    edgeCandidates.push({
+      edge: matchingPoints as LineSegment3D,
+      adjacentTriangleANormal: facets[adjacentTriangleIndex].normal,
+      adjacentTriangleBNormal: facets[currentTriangleIndex].normal,
+    })
+  }
 
-  // lineSystem.parent = mesh;
-  // lineSystemHidden.parent = mesh;
-
-  return null;
+  return edgeCandidates;
 }
 
+export function findSilhouetteLines(
+  edgeCandidates: EdgeCandidate[],
+  meshWorldMatrix: Matrix,
+  cameraForwardVector: Vector3,
+): LineSegment3D[] {
+
+  return edgeCandidates.filter(edgeCandidate => {
+
+    const normalAWorld = Vector3.TransformNormal(edgeCandidate.adjacentTriangleANormal, meshWorldMatrix);
+    const normalBWorld = Vector3.TransformNormal(edgeCandidate.adjacentTriangleBNormal, meshWorldMatrix);
+
+    const aFacing = Vector3.Dot(cameraForwardVector, normalAWorld) > 0;
+    const bFacing = Vector3.Dot(cameraForwardVector, normalBWorld) > 0;
+
+    return aFacing !== bFacing;
+
+  }).map(candidate => candidate.edge);
+}
 
 function computeAdjacency(indices, vertices, epsilon = 0.001): Int32Array {
 
