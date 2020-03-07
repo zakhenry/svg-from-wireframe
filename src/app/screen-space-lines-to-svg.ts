@@ -2,21 +2,12 @@ import { Vector2 } from '@babylonjs/core';
 import { LineSegment } from './interfaces';
 import { ScreenSpaceLines } from './mesh-to-screen-space';
 
-function createLineElement(line: LineSegment): SVGLineElement {
-  const [start, end] = line;
-  const lineElement = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-  lineElement.setAttribute('x1', start.x.toString());
-  lineElement.setAttribute('y1', start.y.toString());
-  lineElement.setAttribute('x2', end.x.toString());
-  lineElement.setAttribute('y2', end.y.toString());
-  return lineElement;
-}
 
 export function screenSpaceLinesToFittedSvg(screenSpaceLines: ScreenSpaceLines, width = 800, height = 600, margin = 100): SVGSVGElement {
 
-  const { obscured, visible } = screenSpaceLines;
+  const { obscured, visible, silhouette } = screenSpaceLines;
 
-  const allLines = obscured.concat(visible);
+  const allLines = obscured.concat(visible, silhouette);
 
   const minBound: Vector2 = allLines[0][0].clone();
   const maxBound: Vector2 = allLines[0][0].clone();
@@ -46,23 +37,38 @@ export function screenSpaceLinesToFittedSvg(screenSpaceLines: ScreenSpaceLines, 
   const scaledPoints = {
     obscured: obscured.map(line => line.map(point => point.subtract(halfViewport).scale(scale).add(halfCanvas))),
     visible: visible.map(line => line.map(point => point.subtract(halfViewport).scale(scale).add(halfCanvas))),
+    silhouette: silhouette.map(line => line.map(point => point.subtract(halfViewport).scale(scale).add(halfCanvas))),
   };
 
   return screenSpaceLinesToSvg(scaledPoints as ScreenSpaceLines, width, height);
 }
 
-export function screenSpaceLinesToSvg(screenSpaceLines: ScreenSpaceLines, width: number, height: number): SVGSVGElement {
-  const { obscured, visible } = screenSpaceLines;
+const SVG_NS = 'http://www.w3.org/2000/svg';
 
-  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+function createLineElement(line: LineSegment): SVGLineElement {
+  const [start, end] = line;
+  const lineElement = document.createElementNS(SVG_NS, 'line');
+  lineElement.setAttribute('x1', start.x.toString());
+  lineElement.setAttribute('y1', start.y.toString());
+  lineElement.setAttribute('x2', end.x.toString());
+  lineElement.setAttribute('y2', end.y.toString());
+  return lineElement;
+}
+
+export function screenSpaceLinesToSvg(screenSpaceLines: ScreenSpaceLines, width: number, height: number): SVGSVGElement {
+  const { obscured, visible, silhouette } = screenSpaceLines;
+
+  const svg = document.createElementNS(SVG_NS, 'svg');
 
   svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
-  svg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+  svg.setAttribute('xmlns', SVG_NS);
 
-  const visibleGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+  const visibleGroup = document.createElementNS(SVG_NS, 'g');
   visibleGroup.id = 'visible';
-  const obscuredGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+  const obscuredGroup = document.createElementNS(SVG_NS, 'g');
   obscuredGroup.id = 'obscured';
+  const silhouetteGroup = document.createElementNS(SVG_NS, 'g');
+  silhouetteGroup.id = 'silhouette';
 
   obscured.forEach((line) => {
     const lineElement = createLineElement(line);
@@ -78,8 +84,16 @@ export function screenSpaceLinesToSvg(screenSpaceLines: ScreenSpaceLines, width:
     visibleGroup.append(lineElement);
   });
 
+  silhouette.forEach((line) => {
+    const lineElement = createLineElement(line);
+    lineElement.setAttribute('stroke', 'red');
+    lineElement.setAttribute('stroke-width', '3');
+    silhouetteGroup.append(lineElement);
+  });
+
   svg.appendChild(obscuredGroup);
   svg.appendChild(visibleGroup);
+  svg.appendChild(silhouetteGroup);
 
   return svg;
 }

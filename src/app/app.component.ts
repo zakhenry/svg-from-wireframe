@@ -25,6 +25,7 @@ import {
 } from '@babylonjs/core';
 import { Observable, Subject } from 'rxjs';
 import { filter, map, pairwise, startWith, switchAll, switchMap, tap } from 'rxjs/operators';
+import { findSilhouetteLines } from './find-silhouette-lines';
 import { createMeshPair, MeshPairData } from './load-mesh';
 import { viewSpaceLinesToScreenSpaceLines, ScreenSpaceLines } from './mesh-to-screen-space';
 import { screenSpaceLinesToFittedSvg, screenSpaceLinesToSvg } from './screen-space-lines-to-svg';
@@ -62,7 +63,8 @@ export class AppComponent implements AfterViewInit {
   public svg$: Observable<SafeUrl> = this.lines$.pipe(
     map((lines) => {
 
-      const svg = screenSpaceLinesToFittedSvg(lines);
+      // const svg = screenSpaceLinesToFittedSvg(lines);
+      const svg = screenSpaceLinesToSvg(lines, this.canvas.nativeElement.width, this.canvas.nativeElement.height);
 
       const svgXml = svg.outerHTML;
 
@@ -178,6 +180,10 @@ export class AppComponent implements AfterViewInit {
 
       const vertices = edgesMesh.getVerticesData(VertexBuffer.PositionKind);
 
+      findSilhouetteLines(mesh.getIndices(), mesh.getVerticesData(VertexBuffer.PositionKind), mesh, scene);
+if (1){
+  return;
+}
       const lines: [Vector3, Vector3][] = [];
 
       for (let i = 0; i < vertices.length; i += 6) {

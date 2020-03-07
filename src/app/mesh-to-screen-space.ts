@@ -6,6 +6,7 @@ import { LineSegment } from './interfaces';
 export interface ScreenSpaceLines {
   obscured: LineSegment[];
   visible: LineSegment[];
+  silhouette: LineSegment[];
 }
 
 export type OcclusionTest = (finiteLengthRay: Ray) => boolean;
@@ -137,6 +138,8 @@ export function viewSpaceLinesToScreenSpaceLines(
 
   });
 
+  const silhouette: LineSegment[] = [culled[0].line];
+
   return culled.reduce((svgLines: ScreenSpaceLines, line) => {
 
     if (line.obscured) {
@@ -147,5 +150,5 @@ export function viewSpaceLinesToScreenSpaceLines(
 
     return svgLines;
 
-  }, { visible: [], obscured: [] });
+  }, { visible: [], obscured: [], silhouette });
 }
