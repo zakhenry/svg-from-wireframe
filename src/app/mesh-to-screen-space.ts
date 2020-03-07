@@ -7,13 +7,12 @@ import { LineSegment } from './interfaces';
 export interface ScreenSpaceLines {
   obscured: LineSegment[];
   visible: LineSegment[];
-  silhouette: LineSegment[];
 }
 
 export type OcclusionTest = (finiteLengthRay: Ray) => boolean;
 
 export function viewSpaceLinesToScreenSpaceLines(
-  lines: [Vector3, Vector3][],
+  wireframeLines: [Vector3, Vector3][],
   silhouetteCandidates: EdgeCandidate[],
   meshWorldMatrix: Matrix,
   sceneTransformMatrix: Matrix,
@@ -28,7 +27,7 @@ export function viewSpaceLinesToScreenSpaceLines(
 
   const silhouetteLines = findSilhouetteLines(silhouetteCandidates, meshWorldMatrix, cameraForwardVector);
 
-  const projectedLines = lines.map((viewSpace, i) => {
+  const projectedLines = wireframeLines.concat(silhouetteLines).map((viewSpace, i) => {
 
     const screenSpace = viewSpace.map((v, j) => {
 
@@ -143,20 +142,6 @@ export function viewSpaceLinesToScreenSpaceLines(
 
   });
 
-  const silhouette: LineSegment[] = silhouetteLines.map((segment) => {
-
-    return segment.map((v) => {
-
-      const coordinates = Vector3.Project(v, meshWorldMatrix, sceneTransformMatrix, viewport);
-
-      return new Vector2(
-        width * coordinates.x,
-        height * coordinates.y,
-      );
-    }) as LineSegment;
-
-  });
-
   return culled.reduce((svgLines: ScreenSpaceLines, line) => {
 
     if (line.obscured) {
@@ -167,5 +152,5 @@ export function viewSpaceLinesToScreenSpaceLines(
 
     return svgLines;
 
-  }, { visible: [], obscured: [], silhouette });
+  }, { visible: [], obscured: [] });
 }

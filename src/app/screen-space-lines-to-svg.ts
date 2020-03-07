@@ -5,9 +5,9 @@ import { ScreenSpaceLines } from './mesh-to-screen-space';
 
 export function screenSpaceLinesToFittedSvg(screenSpaceLines: ScreenSpaceLines, width = 800, height = 600, margin = 100): SVGSVGElement {
 
-  const { obscured, visible, silhouette } = screenSpaceLines;
+  const { obscured, visible } = screenSpaceLines;
 
-  const allLines = obscured.concat(visible, silhouette);
+  const allLines = obscured.concat(visible);
 
   const minBound: Vector2 = allLines[0][0].clone();
   const maxBound: Vector2 = allLines[0][0].clone();
@@ -37,7 +37,6 @@ export function screenSpaceLinesToFittedSvg(screenSpaceLines: ScreenSpaceLines, 
   const scaledPoints = {
     obscured: obscured.map(line => line.map(point => point.subtract(halfViewport).scale(scale).add(halfCanvas))),
     visible: visible.map(line => line.map(point => point.subtract(halfViewport).scale(scale).add(halfCanvas))),
-    silhouette: silhouette.map(line => line.map(point => point.subtract(halfViewport).scale(scale).add(halfCanvas))),
   };
 
   return screenSpaceLinesToSvg(scaledPoints as ScreenSpaceLines, width, height);
@@ -56,7 +55,7 @@ function createLineElement(line: LineSegment): SVGLineElement {
 }
 
 export function screenSpaceLinesToSvg(screenSpaceLines: ScreenSpaceLines, width: number, height: number): SVGSVGElement {
-  const { obscured, visible, silhouette } = screenSpaceLines;
+  const { obscured, visible } = screenSpaceLines;
 
   const svg = document.createElementNS(SVG_NS, 'svg');
 
@@ -67,8 +66,6 @@ export function screenSpaceLinesToSvg(screenSpaceLines: ScreenSpaceLines, width:
   visibleGroup.id = 'visible';
   const obscuredGroup = document.createElementNS(SVG_NS, 'g');
   obscuredGroup.id = 'obscured';
-  const silhouetteGroup = document.createElementNS(SVG_NS, 'g');
-  silhouetteGroup.id = 'silhouette';
 
   obscured.forEach((line) => {
     const lineElement = createLineElement(line);
@@ -84,16 +81,8 @@ export function screenSpaceLinesToSvg(screenSpaceLines: ScreenSpaceLines, width:
     visibleGroup.append(lineElement);
   });
 
-  silhouette.forEach((line) => {
-    const lineElement = createLineElement(line);
-    lineElement.setAttribute('stroke', 'red');
-    lineElement.setAttribute('stroke-width', '3');
-    silhouetteGroup.append(lineElement);
-  });
-
   svg.appendChild(obscuredGroup);
   svg.appendChild(visibleGroup);
-  svg.appendChild(silhouetteGroup);
 
   return svg;
 }
