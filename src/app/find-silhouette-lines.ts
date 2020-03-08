@@ -1,24 +1,6 @@
-import {
-  ArcRotateCamera,
-  Color3,
-  IndicesArray, Matrix,
-  Mesh,
-  MeshBuilder,
-  Scene,
-  TransformNode,
-  Vector3,
-  VertexData,
-} from '@babylonjs/core';
+import { IndicesArray, Matrix, Vector3, VertexData } from '@babylonjs/core';
 import { FloatArray } from '@babylonjs/core/types';
-import { LineSegment } from './interfaces';
-
-type LineSegment3D = [Vector3, Vector3];
-
-export interface EdgeCandidate {
-  edge: LineSegment3D;
-  adjacentTriangleANormal: Vector3;
-  adjacentTriangleBNormal: Vector3;
-}
+import { EdgeCandidate, LineSegment3D } from './interfaces';
 
 export function getSilhouetteCandidates(
   indices: IndicesArray,

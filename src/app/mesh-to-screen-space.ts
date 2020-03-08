@@ -1,8 +1,8 @@
 import { Matrix, Ray, Vector2, Vector3, Viewport } from '@babylonjs/core';
 import { getIntersectionPointFast } from './compute-intersection';
 import { dedupeLines } from './dedupe-lines';
-import { EdgeCandidate, findSilhouetteLines } from './find-silhouette-lines';
-import { LineSegment } from './interfaces';
+import { findSilhouetteLines } from './find-silhouette-lines';
+import { EdgeCandidate, LineSegment, LineSegment3D, ProjectedLine } from './interfaces';
 
 export interface ScreenSpaceLines {
   obscured: LineSegment[];
@@ -27,7 +27,7 @@ export function viewSpaceLinesToScreenSpaceLines(
 
   const silhouetteLines = findSilhouetteLines(silhouetteCandidates, meshWorldMatrix, cameraForwardVector);
 
-  const projectedLines = wireframeLines.concat(silhouetteLines).map((viewSpace, i) => {
+  const projectedLinesWithDuplicates: ProjectedLine[] = wireframeLines.concat(silhouetteLines).map((viewSpace: LineSegment3D) => {
 
     const screenSpace = viewSpace.map((v, j) => {
 
@@ -41,7 +41,9 @@ export function viewSpaceLinesToScreenSpaceLines(
 
     return { screenSpace, viewSpace };
 
-  }).filter((line, i, allLines) => dedupeLines(line.screenSpace, i, allLines.map(l => l.screenSpace)));
+  });
+
+  const projectedLines = dedupeLines(projectedLinesWithDuplicates);
 
   const intersectionsMap: Map<number, Vector2[]> = new Map();
 

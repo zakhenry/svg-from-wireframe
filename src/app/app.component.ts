@@ -24,7 +24,7 @@ import {
   VertexBuffer,
 } from '@babylonjs/core';
 import { BehaviorSubject, Observable, Subject } from 'rxjs';
-import { filter, map, pairwise, startWith, switchAll, switchMap, tap } from 'rxjs/operators';
+import { filter, map, pairwise, share, startWith, switchAll, switchMap, tap } from 'rxjs/operators';
 import { findSilhouetteLines, getSilhouetteCandidates } from './find-silhouette-lines';
 import { createMeshPair, MeshPairData } from './load-mesh';
 import { viewSpaceLinesToScreenSpaceLines, ScreenSpaceLines } from './mesh-to-screen-space';
@@ -68,15 +68,18 @@ export class AppComponent implements AfterViewInit {
   }
 
   private lines$$ = new Subject();
-  public lines$: Observable<ScreenSpaceLines> = this.lines$$.pipe(switchAll(), tap<ScreenSpaceLines>(() => {
+  public lines$: Observable<ScreenSpaceLines> = this.lines$$.pipe(switchAll(), share(), tap<ScreenSpaceLines>(() => {
     this.cd.detectChanges();
   }));
+
+
+  public lineCount$ = this.lines$.pipe(map(lines => lines.obscured.length + lines.visible.length));
 
   public svg$: Observable<SafeUrl> = this.lines$.pipe(
     map((lines) => {
 
-      // const svg = screenSpaceLinesToFittedSvg(lines);
-      const svg = screenSpaceLinesToSvg(lines, this.canvas.nativeElement.width, this.canvas.nativeElement.height);
+      const svg = screenSpaceLinesToFittedSvg(lines);
+      // const svg = screenSpaceLinesToSvg(lines, this.canvas.nativeElement.width, this.canvas.nativeElement.height);
 
       const svgXml = svg.outerHTML;
 
@@ -172,13 +175,13 @@ export class AppComponent implements AfterViewInit {
     this.zone.runOutsideAngular(() => engine.runRenderLoop(() => scene.render()));
 
     // const model = 'slotted-cube';
-    // const model = 'raspi';
+    const model = 'raspi';
     // const model = 'diamond';
     // const model = 'brick';
     // const model = 'silhouette';
     // const model = 'blobular-intersection';
     // const model = 'cylinder';
-    const model = 'inside-outside-cylinder';
+    // const model = 'inside-outside-cylinder';
 
     this.http.get<MeshPairData>(`/assets/${model}.json`).pipe(tap((res) => {
 
@@ -226,7 +229,7 @@ export class AppComponent implements AfterViewInit {
           ray => {
             const pick = ray.intersectsMesh(mesh as any);
 
-            return pick.hit && ray.length - pick.distance > 0.1;
+            return pick.hit && (ray.length - pick.distance) > 0.01;
           });
 
       })));
