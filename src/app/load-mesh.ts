@@ -55,19 +55,18 @@ function generateLineStripIndices(positions: ArrayLike<number>): Int32Array {
   return indices;
 }
 
-
 export function createMesh(name: string, scene: Scene, meshData: MeshAssetData): Mesh {
   const { positions, normals, indices, geomType } = meshData;
 
   const vertexData = new VertexData();
-  vertexData.positions = positions;
+  vertexData.positions = Float32Array.from(positions);
 
   let mesh: Mesh;
 
   switch (geomType) {
     case GeometryType.TRIANGLES: {
-      vertexData.indices = indices;
-      vertexData.normals = normals;
+      vertexData.indices = Int32Array.from(indices);
+      vertexData.normals = Float32Array.from(normals);
 
       mesh = new Mesh(name, scene);
       break;

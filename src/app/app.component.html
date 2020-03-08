@@ -5,7 +5,6 @@
 <button (click)="toggleSvgVisible()">toggle svg visible</button>
 <button (click)="toggleContinuousRender()">toggle continuous render</button>
 <button *ngIf="!continousRender$.value" (click)="triggerRender()">trigger render</button>
-<pre highlight="">lineCount$: {{lineCount$|async|json}}</pre>
 
 <ng-container *ngIf="svgVisible">
 

@@ -12,7 +12,7 @@ export interface ScreenSpaceLines {
 export type OcclusionTest = (finiteLengthRay: Ray) => boolean;
 
 export function viewSpaceLinesToScreenSpaceLines(
-  wireframeLines: [Vector3, Vector3][],
+  wireframeLines: LineSegment3D[],
   silhouetteCandidates: EdgeCandidate[],
   meshWorldMatrix: Matrix,
   sceneTransformMatrix: Matrix,

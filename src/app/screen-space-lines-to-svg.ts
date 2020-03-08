@@ -3,7 +3,7 @@ import { LineSegment } from './interfaces';
 import { ScreenSpaceLines } from './mesh-to-screen-space';
 
 
-export function screenSpaceLinesToFittedSvg(screenSpaceLines: ScreenSpaceLines, width = 800, height = 600, margin = 100): SVGSVGElement {
+export function screenSpaceLinesToFittedSvg(screenSpaceLines: ScreenSpaceLines, width = 800, height = 600, margin = 100): string {
 
   const { obscured, visible } = screenSpaceLines;
 
@@ -42,9 +42,7 @@ export function screenSpaceLinesToFittedSvg(screenSpaceLines: ScreenSpaceLines, 
   return screenSpaceLinesToSvg(scaledPoints as ScreenSpaceLines, width, height);
 }
 
-const SVG_NS = 'http://www.w3.org/2000/svg';
-
-function createPathElement(lines: LineSegment[], stroke: string, strokeWidth: number): SVGPathElement {
+function createPathElement(lines: LineSegment[], stroke: string, strokeWidth: number): string {
 
   let pathDef = '';
   let current: Vector2 = null;
@@ -61,26 +59,14 @@ function createPathElement(lines: LineSegment[], stroke: string, strokeWidth: nu
 
   });
 
-  const pathElement = document.createElementNS(SVG_NS, 'path');
-  pathElement.setAttribute('d', pathDef);
-  pathElement.setAttribute('stroke', stroke);
-  pathElement.setAttribute('fill', 'none');
-  pathElement.setAttribute('stroke-width', strokeWidth.toString());
-  pathElement.setAttribute('stroke-width', strokeWidth.toString());
-  pathElement.setAttribute('stroke-linecap', 'round');
-  return pathElement;
+  return `<path d="${pathDef}" stroke="${stroke}" fill="none" stroke-width="${strokeWidth}" stroke-linecap="round" />`
 }
 
-export function screenSpaceLinesToSvg(screenSpaceLines: ScreenSpaceLines, width: number, height: number): SVGSVGElement {
+export function screenSpaceLinesToSvg(screenSpaceLines: ScreenSpaceLines, width: number, height: number): string {
   const { obscured, visible } = screenSpaceLines;
 
-  const svg = document.createElementNS(SVG_NS, 'svg');
-
-  svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
-  svg.setAttribute('xmlns', SVG_NS);
-
-  svg.appendChild(createPathElement(obscured, 'lightgrey', 1));
-  svg.appendChild(createPathElement(visible, 'black', 2));
-
-  return svg;
+  return `<svg viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
+  ${createPathElement(obscured, 'lightgrey', 1)}
+  ${createPathElement(visible, 'black', 2)}
+</svg>`;
 }

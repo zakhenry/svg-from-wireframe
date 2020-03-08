@@ -23,12 +23,14 @@ import {
   Vector3,
   VertexBuffer,
 } from '@babylonjs/core';
-import { BehaviorSubject, Observable, Subject } from 'rxjs';
-import { filter, map, pairwise, share, startWith, switchAll, switchMap, tap } from 'rxjs/operators';
-import { findSilhouetteLines, getSilhouetteCandidates } from './find-silhouette-lines';
+import { fromWorker } from 'observable-webworker';
+import { BehaviorSubject, Observable, of, Subject } from 'rxjs';
+import { filter, map, pairwise, share, startWith, switchAll, switchMap, take, tap } from 'rxjs/operators';
+import { getSilhouetteCandidates } from './find-silhouette-lines';
+import { MeshToSvgWorkerPayload } from './interfaces';
 import { createMeshPair, MeshPairData } from './load-mesh';
-import { viewSpaceLinesToScreenSpaceLines, ScreenSpaceLines } from './mesh-to-screen-space';
-import { screenSpaceLinesToFittedSvg, screenSpaceLinesToSvg } from './screen-space-lines-to-svg';
+import { ScreenSpaceLines } from './mesh-to-screen-space';
+import { screenSpaceLinesToFittedSvg } from './screen-space-lines-to-svg';
 
 @Component({
   selector: 'app-root',
@@ -42,7 +44,7 @@ export class AppComponent implements AfterViewInit {
 
   triggerRender$ = new Subject();
 
-  continousRender$ = new BehaviorSubject(false)
+  continousRender$ = new BehaviorSubject(false);
 
   @ViewChild('canvas') canvas: ElementRef;
   @ViewChild('svg') svg: ElementRef;
@@ -68,22 +70,13 @@ export class AppComponent implements AfterViewInit {
   }
 
   private lines$$ = new Subject();
-  public lines$: Observable<ScreenSpaceLines> = this.lines$$.pipe(switchAll(), share(), tap<ScreenSpaceLines>(() => {
+  public lines$: Observable<string> = this.lines$$.pipe(switchAll(), share(), tap<string>(() => {
     this.cd.detectChanges();
   }));
 
-
-  public lineCount$ = this.lines$.pipe(map(lines => lines.obscured.length + lines.visible.length));
-
   public svg$: Observable<SafeUrl> = this.lines$.pipe(
-    map((lines) => {
-
-      const svg = screenSpaceLinesToFittedSvg(lines);
-      // const svg = screenSpaceLinesToSvg(lines, this.canvas.nativeElement.width, this.canvas.nativeElement.height);
-
-      const svgXml = svg.outerHTML;
-
-      return URL.createObjectURL(new Blob([svgXml], {type : 'image/svg+xml'}));
+    map((svg) => {
+      return URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' }));
     }),
     startWith(null),
     pairwise(),
@@ -92,10 +85,9 @@ export class AppComponent implements AfterViewInit {
         setTimeout(() => URL.revokeObjectURL(previous));
       }
 
-
       return this.sanitizer.bypassSecurityTrustUrl(current);
     }),
-    filter(url => !!url)
+    filter(url => !!url),
   );
 
   public ngAfterViewInit() {
@@ -197,48 +189,51 @@ export class AppComponent implements AfterViewInit {
 
       mesh.rotate(Vector3.Left(), Math.PI / 2);
 
-      const vertices = edgesMesh.getVerticesData(VertexBuffer.PositionKind);
-
-      const silhouetteCandidates = getSilhouetteCandidates(mesh.getIndices(), mesh.getVerticesData(VertexBuffer.PositionKind));
-
-      const lines: [Vector3, Vector3][] = [];
-
-      for (let i = 0; i < vertices.length; i += 6) {
-
-        lines.push([
-          new Vector3(vertices[i], vertices[i + 1], vertices[i + 2]),
-          new Vector3(vertices[i + 3], vertices[i + 4], vertices[i + 5]),
-        ]);
-
-      }
-
       this.lines$$.next(this.continousRender$.pipe(
         switchMap(continousRender => continousRender ? render$ : this.triggerRender$),
-        map(() => {
-        return viewSpaceLinesToScreenSpaceLines(
-          lines,
-          silhouetteCandidates,
-          edgesMesh.getWorldMatrix(),
-          scene.getTransformMatrix(),
-          scene.getViewMatrix(),
-          scene.getProjectionMatrix(),
-          scene.activeCamera.viewport,
-          (scene.activeCamera as ArcRotateCamera).getFrontPosition(1),
-          scene.getEngine().getRenderWidth(),
-          scene.getEngine().getRenderHeight(),
-          ray => {
-            const pick = ray.intersectsMesh(mesh as any);
+        switchMap(() => {
 
-            return pick.hit && (ray.length - pick.distance) > 0.01;
-          });
+          const input: MeshToSvgWorkerPayload = {
+            mesh: {
+              positions: mesh.getVerticesData(VertexBuffer.PositionKind, true, true) as Float32Array,
+              indices: Int32Array.from(mesh.getIndices()),
+              normals: mesh.getVerticesData(VertexBuffer.NormalKind, true, true) as Float32Array,
+            },
+            wireframe: {
+              positions: edgesMesh.getVerticesData(VertexBuffer.PositionKind, true, true) as Float32Array,
+              indices: Int32Array.from(edgesMesh.getIndices()),
+            },
+            meshWorldMatrix: mesh.getWorldMatrix().toArray() as Float32Array,
+            sceneTransformMatrix: scene.getTransformMatrix().toArray() as Float32Array,
+            sceneViewMatrix: scene.getViewMatrix().toArray() as Float32Array,
+            sceneProjectionMatrix: scene.getProjectionMatrix().toArray() as Float32Array,
+            viewport: scene.activeCamera.viewport,
+            cameraForwardVector: (scene.activeCamera as ArcRotateCamera).getFrontPosition(1).asArray(),
+            width: scene.getEngine().getRenderWidth(), height: scene.getEngine().getRenderHeight(),
+          };
 
-      })));
+          return fromWorker(
+            () => new Worker('./mesh-to-svg.worker', { type: 'module' }),
+            of(input),
+            input => {
+              return [
+                input.mesh.positions.buffer,
+                input.mesh.indices.buffer,
+                input.mesh.normals.buffer,
+                input.wireframe.positions.buffer,
+                input.wireframe.indices.buffer,
+              ];
+            }).pipe(take(1));
+
+        })));
 
     })).subscribe(() => {
 
     });
 
   }
+
+
 
   public saveSvg(url: SafeUrl) {
     const link = this.renderer.createElement('a');
