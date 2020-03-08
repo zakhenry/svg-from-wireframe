@@ -6,7 +6,7 @@
     "ng": "ng",
     "------------------ LINT COMMANDS -----------------": "",
     "prettier": "prettier",
-    "prettier:base": "yarn run prettier \"**/*.{js,scss,md,ts,html}\"",
+    "prettier:base": "yarn run prettier \"**/*.{js,json,scss,md,ts,html}\"",
     "prettier:write": "yarn run prettier:base --write",
     "prettier:check": "yarn run prettier:base --list-different",
     "------------------ DEMO COMMANDS -----------------": "",
