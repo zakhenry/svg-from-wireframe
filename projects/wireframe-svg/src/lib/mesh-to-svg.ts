@@ -1,11 +1,7 @@
 import { Matrix, Mesh, NullEngine, Scene, Vector3, VertexData, Viewport } from '@babylonjs/core';
-import { NEVER, Observable, of } from 'rxjs';
-import { switchMap } from 'rxjs/operators';
-import {
-  MeshToSvgWorkerInitPayload,
-  MeshToSvgWorkerPayload,
-  MeshToSvgWorkerRenderPayload,
-} from './external-interfaces';
+import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
+import { MeshToSvgWorkerPayload } from './external-interfaces';
 import { getSilhouetteCandidates } from './find-silhouette-lines';
 import { EdgeCandidate, LineSegment3D } from './interfaces';
 import { viewSpaceLinesToScreenSpaceLines } from './mesh-to-screen-space';
@@ -18,16 +14,15 @@ export class MeshToSvg {
   private silhouetteCandidates: EdgeCandidate[];
   private wireframeLines: LineSegment3D[];
 
-  public prepare(input: MeshToSvgWorkerInitPayload): Observable<never> {
+  public prepare(input: MeshToSvgWorkerPayload): void {
     this.mesh = this.getMesh(input.mesh, this.scene);
     this.silhouetteCandidates = getSilhouetteCandidates(input.mesh.indices, input.mesh.positions);
     this.wireframeLines = this.getWireframeLines(input.wireframe.positions);
-    return NEVER;
   }
-  public render(input: MeshToSvgWorkerRenderPayload): Observable<string> {
+
+  public render(input: MeshToSvgWorkerPayload): string {
     const meshWorldMatrix = Matrix.FromArray(input.meshWorldMatrix);
     this.mesh._worldMatrix = meshWorldMatrix;
-
 
     const sceneTransformMatrix = Matrix.FromArray(input.sceneTransformMatrix);
     const sceneViewMatrix = Matrix.FromArray(input.sceneViewMatrix);
@@ -57,26 +52,21 @@ export class MeshToSvg {
 
     const svg = screenSpaceLinesToFittedSvg(screenSpaceLines);
 
-    return of(svg);
+    return svg;
   }
 
   public run(input$: Observable<MeshToSvgWorkerPayload>): Observable<string> {
 
     return input$.pipe(
-      switchMap((input: MeshToSvgWorkerPayload) => {
-
-        switch(input.type) {
-          case 'init':
-            return this.prepare(input);
-          case 'render':
-            return this.render(input);
-        }
+      map((input: MeshToSvgWorkerPayload) => {
+        this.prepare(input);
+        return this.render(input);
       }),
     );
 
   }
 
-  private getMesh(input: MeshToSvgWorkerInitPayload['mesh'], scene: Scene): Mesh {
+  private getMesh(input: MeshToSvgWorkerPayload['mesh'], scene: Scene): Mesh {
 
     const vertexData = new VertexData();
     vertexData.positions = input.positions;

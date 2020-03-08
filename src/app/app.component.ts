@@ -24,9 +24,9 @@ import {
   VertexBuffer,
 } from '@babylonjs/core';
 import { fromWorker } from 'observable-webworker';
-import { BehaviorSubject, Observable, Subject } from 'rxjs';
-import { filter, map, pairwise, share, startWith, switchAll, switchMap, tap } from 'rxjs/operators';
-import { MeshToSvgWorkerInitPayload, MeshToSvgWorkerPayload, MeshToSvgWorkerRenderPayload } from 'wireframe-svg';
+import { BehaviorSubject, Observable, of, Subject } from 'rxjs';
+import { filter, map, mergeMap, pairwise, startWith, switchMap, take, tap } from 'rxjs/operators';
+import { MeshToSvgWorkerPayload } from 'wireframe-svg';
 import { createMeshPair, MeshPairData } from './load-mesh';
 
 @Component({
@@ -44,18 +44,23 @@ export class AppComponent implements AfterViewInit {
   continousRender$ = new BehaviorSubject(false);
 
   workerInput$: Subject<MeshToSvgWorkerPayload> = new Subject();
-  workerOutput$: Observable<string> = fromWorker(
-    () => new Worker('./mesh-to-svg.worker', { type: 'module' }),
-    this.workerInput$,
-    input => {
-      return input.type === 'init' ? [
-        input.mesh.positions.buffer,
-        input.mesh.indices.buffer,
-        input.mesh.normals.buffer,
-        input.wireframe.positions.buffer,
-        input.wireframe.indices.buffer,
-      ] : [];
+
+  workerOutput$: Observable<string> = this.workerInput$.pipe(
+    mergeMap((input) => {
+      return fromWorker<MeshToSvgWorkerPayload, string>(
+        () => new Worker('./mesh-to-svg.worker', { type: 'module' }),
+        of(input),
+        input => [
+          input.mesh.positions.buffer,
+          input.mesh.indices.buffer,
+          input.mesh.normals.buffer,
+          input.wireframe.positions.buffer,
+          input.wireframe.indices.buffer,
+        ]).pipe(take(1))
+
     })
+  );
+
 
   @ViewChild('canvas') canvas: ElementRef;
   @ViewChild('svg') svg: ElementRef;
@@ -79,11 +84,6 @@ export class AppComponent implements AfterViewInit {
   public triggerRender(): void {
     this.triggerRender$.next();
   }
-
-  private lines$$ = new Subject();
-  public lines$: Observable<string> = this.lines$$.pipe(switchAll(), share(), tap<string>(() => {
-    this.cd.detectChanges();
-  }));
 
   public svg$: Observable<SafeUrl> = this.workerOutput$.pipe(
     map((svg) => {
@@ -200,27 +200,20 @@ export class AppComponent implements AfterViewInit {
 
       mesh.rotate(Vector3.Left(), Math.PI / 2);
 
-      const inputInit: MeshToSvgWorkerInitPayload = {
-        type: 'init',
-        mesh: {
-          positions: mesh.getVerticesData(VertexBuffer.PositionKind, true, true) as Float32Array,
-          indices: Int32Array.from(mesh.getIndices()),
-          normals: mesh.getVerticesData(VertexBuffer.NormalKind, true, true) as Float32Array,
-        },
-        wireframe: {
-          positions: edgesMesh.getVerticesData(VertexBuffer.PositionKind, true, true) as Float32Array,
-          indices: Int32Array.from(edgesMesh.getIndices()),
-        },
-      };
-
-      this.workerInput$.next(inputInit);
-
       this.continousRender$.pipe(
         switchMap(continousRender => continousRender ? render$ : this.triggerRender$),
         tap(() => {
 
-          const inputRender: MeshToSvgWorkerRenderPayload = {
-            type: 'render',
+          const inputRender: MeshToSvgWorkerPayload = {
+            mesh: {
+              positions: mesh.getVerticesData(VertexBuffer.PositionKind, true, true) as Float32Array,
+              indices: Int32Array.from(mesh.getIndices()),
+              normals: mesh.getVerticesData(VertexBuffer.NormalKind, true, true) as Float32Array,
+            },
+            wireframe: {
+              positions: edgesMesh.getVerticesData(VertexBuffer.PositionKind, true, true) as Float32Array,
+              indices: Int32Array.from(edgesMesh.getIndices()),
+            },
             meshWorldMatrix: mesh.getWorldMatrix().toArray() as Float32Array,
             sceneTransformMatrix: scene.getTransformMatrix().toArray() as Float32Array,
             sceneViewMatrix: scene.getViewMatrix().toArray() as Float32Array,
@@ -232,7 +225,7 @@ export class AppComponent implements AfterViewInit {
 
           this.workerInput$.next(inputRender);
 
-        })
+        }),
       ).subscribe();
 
     })).subscribe();

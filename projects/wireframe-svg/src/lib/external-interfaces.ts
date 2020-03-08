@@ -2,8 +2,7 @@ type MatrixData = Float32Array;
 
 type Vector3Data = number[];
 
-export interface MeshToSvgWorkerInitPayload {
-  type: 'init',
+export interface MeshToSvgWorkerPayload {
   mesh: {
     positions: Float32Array,
     indices: Int32Array,
@@ -13,10 +12,6 @@ export interface MeshToSvgWorkerInitPayload {
     positions: Float32Array,
     indices: Int32Array,
   }
-}
-
-export interface MeshToSvgWorkerRenderPayload {
-  type: 'render',
   meshWorldMatrix: MatrixData,
   sceneTransformMatrix: MatrixData,
   sceneViewMatrix: MatrixData,
@@ -25,6 +20,3 @@ export interface MeshToSvgWorkerRenderPayload {
   cameraForwardVector: Vector3Data,
   width: number, height: number,
 }
-
-
-export type MeshToSvgWorkerPayload = MeshToSvgWorkerInitPayload | MeshToSvgWorkerRenderPayload;

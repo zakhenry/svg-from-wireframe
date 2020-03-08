@@ -1,9 +1,8 @@
 {
-  "name": "wireframe-svg",
+  "name": "wireframe-svg-maker",
   "version": "0.0.1",
   "peerDependencies": {
-    "@angular/common": "^9.0.3",
-    "@angular/core": "^9.0.3",
-    "tslib": "^1.10.0"
+    "tslib": "^1.10.0",
+    "@babylonjs/core": "^4.1.0"
   }
 }
