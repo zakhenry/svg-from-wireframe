@@ -43,7 +43,7 @@ export class AppComponent implements AfterViewInit {
     private cd: ChangeDetectorRef,
     private sanitizer: DomSanitizer,
   ) {}
-  public title = 'wireframe-svg-maker';
+  public title = 'wireframe-svg-demo';
   public svgVisible = true;
 
   public triggerRender$ = new Subject();

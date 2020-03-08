@@ -3,7 +3,7 @@
   "version": 1,
   "newProjectRoot": "projects",
   "projects": {
-    "wireframe-svg-maker": {
+    "wireframe-svg-demo": {
       "projectType": "application",
       "schematics": {
         "@schematics/angular:component": {
@@ -17,7 +17,7 @@
         "build": {
           "builder": "@angular-devkit/build-angular:browser",
           "options": {
-            "outputPath": "dist/wireframe-svg-maker",
+            "outputPath": "dist/wireframe-svg-demo",
             "index": "src/index.html",
             "main": "src/main.ts",
             "polyfills": "src/polyfills.ts",
@@ -62,18 +62,18 @@
         "serve": {
           "builder": "@angular-devkit/build-angular:dev-server",
           "options": {
-            "browserTarget": "wireframe-svg-maker:build"
+            "browserTarget": "wireframe-svg-demo:build"
           },
           "configurations": {
             "production": {
-              "browserTarget": "wireframe-svg-maker:build:production"
+              "browserTarget": "wireframe-svg-demo:build:production"
             }
           }
         },
         "extract-i18n": {
           "builder": "@angular-devkit/build-angular:extract-i18n",
           "options": {
-            "browserTarget": "wireframe-svg-maker:build"
+            "browserTarget": "wireframe-svg-demo:build"
           }
         },
         "test": {
@@ -133,5 +133,5 @@
       }
     }
   },
-  "defaultProject": "wireframe-svg-maker"
+  "defaultProject": "wireframe-svg-demo"
 }

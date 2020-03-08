@@ -1,5 +1,5 @@
 {
-  "name": "wireframe-svg-maker",
+  "name": "wireframe-to-svg",
   "version": "0.0.1",
   "peerDependencies": {
     "tslib": "^1.10.0",
