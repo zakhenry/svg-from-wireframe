@@ -40,9 +40,6 @@ script:
   - rm dist/wireframe-svg/README.md && cp README.md dist/wireframe-svg
   - cp LICENSE dist/wireframe-svg
 
-after_success:
-  - codecov
-
 deploy:
   - provider: script
     skip_cleanup: true
