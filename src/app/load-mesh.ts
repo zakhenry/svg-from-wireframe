@@ -3,7 +3,6 @@ import { LinesMesh, Mesh, Scene, VertexData } from '@babylonjs/core';
 type FloatArray = number[] | Float32Array;
 type IndicesArray = number[] | Int32Array | Uint32Array | Uint16Array;
 
-
 enum GeometryType {
   UNKNOWN = 0,
   POINTS = 1,
@@ -11,7 +10,7 @@ enum GeometryType {
   LINE_STRIP = 3,
   TRIANGLES = 4,
   TRIANGLE_STRIP = 5,
-  TRIANGLE_FAN = 6
+  TRIANGLE_FAN = 6,
 }
 
 export interface MeshPairData {
@@ -19,7 +18,6 @@ export interface MeshPairData {
   mesh: MeshAssetData;
   edgesMesh: MeshAssetData;
 }
-
 
 export interface MeshPair {
   id: string;
@@ -98,13 +96,11 @@ export function createMesh(name: string, scene: Scene, meshData: MeshAssetData):
 }
 
 export function createMeshPair(scene: Scene, meshPair: MeshPairData): MeshPair {
-
   const id = meshPair.id;
 
   return {
     id,
     mesh: createMesh(id + 'mesh', scene, meshPair.mesh),
     edgesMesh: createMesh(id + 'edges', scene, meshPair.edgesMesh) as LinesMesh,
-  }
-
+  };
 }

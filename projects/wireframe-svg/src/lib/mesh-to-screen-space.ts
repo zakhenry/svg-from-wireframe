@@ -20,28 +20,25 @@ export function viewSpaceLinesToScreenSpaceLines(
   sceneProjectionMatrix: Matrix,
   viewport: Viewport,
   cameraForwardVector: Vector3,
-  width: number, height: number,
+  width: number,
+  height: number,
   isObscured: OcclusionTest,
 ): ScreenSpaceLines {
   const identity = Matrix.Identity();
 
   const silhouetteLines = findSilhouetteLines(silhouetteCandidates, meshWorldMatrix, cameraForwardVector);
 
-  const projectedLinesWithDuplicates: ProjectedLine[] = wireframeLines.concat(silhouetteLines).map((viewSpace: LineSegment3D) => {
+  const projectedLinesWithDuplicates: ProjectedLine[] = wireframeLines
+    .concat(silhouetteLines)
+    .map((viewSpace: LineSegment3D) => {
+      const screenSpace = viewSpace.map((v, j) => {
+        const coordinates = Vector3.Project(v, meshWorldMatrix, sceneTransformMatrix, viewport);
 
-    const screenSpace = viewSpace.map((v, j) => {
+        return new Vector2(width * coordinates.x, height * coordinates.y);
+      }) as LineSegment;
 
-      const coordinates = Vector3.Project(v, meshWorldMatrix, sceneTransformMatrix, viewport);
-
-      return new Vector2(
-        width * coordinates.x,
-        height * coordinates.y,
-      );
-    }) as LineSegment;
-
-    return { screenSpace, viewSpace };
-
-  });
+      return { screenSpace, viewSpace };
+    });
 
   const projectedLines = dedupeLines(projectedLinesWithDuplicates);
 
@@ -49,9 +46,7 @@ export function viewSpaceLinesToScreenSpaceLines(
 
   // eep, this is O(N^2)
   for (let b = 0; b < projectedLines.length; b++) {
-
     for (let a = b + 1; a < projectedLines.length; a++) {
-
       const lineA = projectedLines[a].screenSpace;
       const lineB = projectedLines[b].screenSpace;
 
@@ -65,23 +60,25 @@ export function viewSpaceLinesToScreenSpaceLines(
           intersectionsMap.get(p).push(intersection);
         });
       }
-
     }
-
   }
 
   const culled = projectedLines.flatMap((projected, index) => {
-
     const line = projected.screenSpace;
 
     const screenSpaceDistance = Vector2.Distance(line[0], line[1]);
 
-    const sortedIntersections = !intersectionsMap.has(index) ? [] : intersectionsMap.get(index).map(point => {
-      return {
-        point, distance: Vector2.Distance(line[0], point),
-      };
-    })
-      .sort((a, b) => a.distance - b.distance);
+    const sortedIntersections = !intersectionsMap.has(index)
+      ? []
+      : intersectionsMap
+          .get(index)
+          .map(point => {
+            return {
+              point,
+              distance: Vector2.Distance(line[0], point),
+            };
+          })
+          .sort((a, b) => a.distance - b.distance);
 
     const candidateNodes = [
       { distance: 0, point: line[0] },
@@ -91,12 +88,11 @@ export function viewSpaceLinesToScreenSpaceLines(
 
     let currentObscured = null;
 
-    const results: Array<{ obscured: boolean, line: LineSegment }> = [];
+    const results: Array<{ obscured: boolean; line: LineSegment }> = [];
 
     let currentCandidate = [candidateNodes[0], candidateNodes[1]];
 
     candidateNodes.forEach((node, i, allNodes) => {
-
       if (i === allNodes.length - 1) {
         return;
       }
@@ -135,24 +131,23 @@ export function viewSpaceLinesToScreenSpaceLines(
         currentObscured = obscured;
         currentCandidate = testLine;
       }
-
     });
 
     results.push({ line: [currentCandidate[0].point, currentCandidate[1].point], obscured: currentObscured });
 
     return results;
-
   });
 
-  return culled.reduce((svgLines: ScreenSpaceLines, line) => {
+  return culled.reduce(
+    (svgLines: ScreenSpaceLines, line) => {
+      if (line.obscured) {
+        svgLines.obscured.push(line.line);
+      } else {
+        svgLines.visible.push(line.line);
+      }
 
-    if (line.obscured) {
-      svgLines.obscured.push(line.line);
-    } else {
-      svgLines.visible.push(line.line);
-    }
-
-    return svgLines;
-
-  }, { visible: [], obscured: [] });
+      return svgLines;
+    },
+    { visible: [], obscured: [] },
+  );
 }

@@ -1,13 +1,32 @@
 {
   "name": "wireframe-svg-maker",
-  "version": "0.0.0",
+  "version": "0.0.0-development",
   "scripts": {
+    "------------------ CORE COMMANDS -----------------": "",
     "ng": "ng",
-    "start": "ng serve",
-    "build": "ng build",
-    "test": "ng test",
-    "lint": "ng lint",
-    "e2e": "ng e2e"
+    "------------------ LINT COMMANDS -----------------": "",
+    "prettier": "prettier",
+    "prettier:base": "yarn run prettier \"**/*.{js,scss,md,ts,html}\"",
+    "prettier:write": "yarn run prettier:base --write",
+    "prettier:check": "yarn run prettier:base --list-different",
+    "------------------ DEMO COMMANDS -----------------": "",
+    "demo:start": "yarn run ng serve",
+    "demo:build:base": "yarn run ng build",
+    "demo:build:prod": "yarn run demo:build:base --prod",
+    "demo:test": "yarn run ng test",
+    "demo:lint:check": "yarn run ng lint",
+    "demo:lint:fix": "yarn run demo:lint:check --fix",
+    "------------------ LIB COMMANDS -----------------": "",
+    "lib:build:prod": "yarn run ng build --project wireframe-svg",
+    "lib:build:watch": "yarn run lib:build:prod --watch",
+    "lib:test:watch": "yarn run ng test --project wireframe-svg",
+    "lib:test:ci": "yarn run ng test --project wireframe-svg --watch false",
+    "------------------ RELEASE COMMANDS ------------------": "",
+    "semantic-release": "semantic-release",
+    "------------------ QUICK COMMANDS ------------------": "",
+    "lint:fix": "yarn demo:lint:fix && yarn prettier:write",
+    "test": "yarn lib:test:watch",
+    "start": "yarn demo:start"
   },
   "private": true,
   "dependencies": {
@@ -44,9 +63,14 @@
     "karma-jasmine": "~2.0.1",
     "karma-jasmine-html-reporter": "^1.4.2",
     "ng-packagr": "^9.0.0",
-    "protractor": "~5.4.3",
+    "prettier": "^1.19.1",
+    "semantic-release": "^17.0.4",
     "ts-node": "~8.3.0",
     "tslint": "~5.18.0",
     "typescript": "~3.7.5"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/zakhenry/wireframe-svg-maker.git"
   }
 }

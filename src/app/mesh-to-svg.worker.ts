@@ -6,9 +6,7 @@ import { MeshToSvg } from '../../projects/wireframe-svg/src/lib/mesh-to-svg';
 
 @ObservableWorker()
 export class MeshToSvgWorker implements DoWork<MeshToSvgWorkerPayload, string> {
-
   public work(input$: Observable<MeshToSvgWorkerPayload>): Observable<string> {
     return new MeshToSvg().run(input$);
   }
-
 }

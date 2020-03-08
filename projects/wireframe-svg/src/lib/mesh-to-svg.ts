@@ -8,7 +8,6 @@ import { viewSpaceLinesToScreenSpaceLines } from './mesh-to-screen-space';
 import { screenSpaceLinesToFittedSvg } from './screen-space-lines-to-svg';
 
 export class MeshToSvg {
-
   private scene: Scene = this.getScene();
   private mesh: Mesh;
   private silhouetteCandidates: EdgeCandidate[];
@@ -34,7 +33,7 @@ export class MeshToSvg {
     const isObscured = ray => {
       const pick = ray.intersectsMesh(this.mesh);
 
-      return pick.hit && (ray.length - pick.distance) > 0.01;
+      return pick.hit && ray.length - pick.distance > 0.01;
     };
 
     const screenSpaceLines = viewSpaceLinesToScreenSpaceLines(
@@ -46,7 +45,8 @@ export class MeshToSvg {
       sceneProjectionMatrix,
       viewport,
       cameraForwardVector,
-      width, height,
+      width,
+      height,
       isObscured,
     );
 
@@ -56,18 +56,15 @@ export class MeshToSvg {
   }
 
   public run(input$: Observable<MeshToSvgWorkerPayload>): Observable<string> {
-
     return input$.pipe(
       map((input: MeshToSvgWorkerPayload) => {
         this.prepare(input);
         return this.render(input);
       }),
     );
-
   }
 
   private getMesh(input: MeshToSvgWorkerPayload['mesh'], scene: Scene): Mesh {
-
     const vertexData = new VertexData();
     vertexData.positions = input.positions;
     vertexData.indices = input.indices;
@@ -82,30 +79,23 @@ export class MeshToSvg {
   }
 
   private getScene(): Scene {
-
     const engine = new NullEngine();
 
     const scene = new Scene(engine);
 
     return scene;
-
   }
 
   private getWireframeLines(wireframePositions: Float32Array): LineSegment3D[] {
-
     const lines: LineSegment3D[] = [];
 
     for (let i = 0; i < wireframePositions.length; i += 6) {
-
       lines.push([
         new Vector3(wireframePositions[i], wireframePositions[i + 1], wireframePositions[i + 2]),
         new Vector3(wireframePositions[i + 3], wireframePositions[i + 4], wireframePositions[i + 5]),
       ]);
-
     }
 
     return lines;
-
   }
-
 }

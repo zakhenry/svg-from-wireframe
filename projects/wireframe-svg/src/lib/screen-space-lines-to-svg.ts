@@ -2,9 +2,12 @@ import { Vector2 } from '@babylonjs/core';
 import { LineSegment } from './interfaces';
 import { ScreenSpaceLines } from './mesh-to-screen-space';
 
-
-export function screenSpaceLinesToFittedSvg(screenSpaceLines: ScreenSpaceLines, width = 800, height = 600, margin = 100): string {
-
+export function screenSpaceLinesToFittedSvg(
+  screenSpaceLines: ScreenSpaceLines,
+  width = 800,
+  height = 600,
+  margin = 100,
+): string {
   const { obscured, visible } = screenSpaceLines;
 
   const allLines = obscured.concat(visible);
@@ -35,19 +38,31 @@ export function screenSpaceLinesToFittedSvg(screenSpaceLines: ScreenSpaceLines, 
   const scale = Math.min(xScale, yScale);
 
   const scaledPoints = {
-    obscured: obscured.map(line => line.map(point => point.subtract(halfViewport).scale(scale).add(halfCanvas))),
-    visible: visible.map(line => line.map(point => point.subtract(halfViewport).scale(scale).add(halfCanvas))),
+    obscured: obscured.map(line =>
+      line.map(point =>
+        point
+          .subtract(halfViewport)
+          .scale(scale)
+          .add(halfCanvas),
+      ),
+    ),
+    visible: visible.map(line =>
+      line.map(point =>
+        point
+          .subtract(halfViewport)
+          .scale(scale)
+          .add(halfCanvas),
+      ),
+    ),
   };
 
   return screenSpaceLinesToSvg(scaledPoints as ScreenSpaceLines, width, height);
 }
 
 function createPathElement(lines: LineSegment[], stroke: string, strokeWidth: number): string {
-
   let pathDef = '';
   let current: Vector2 = null;
   lines.forEach(([start, end], i) => {
-
     if (current && current.equalsWithEpsilon(start)) {
       pathDef += 'L ';
     } else {
@@ -56,10 +71,9 @@ function createPathElement(lines: LineSegment[], stroke: string, strokeWidth: nu
     pathDef += `${end.x} ${end.y}`;
 
     current = end;
-
   });
 
-  return `<path d="${pathDef}" stroke="${stroke}" fill="none" stroke-width="${strokeWidth}" stroke-linecap="round" />`
+  return `<path d="${pathDef}" stroke="${stroke}" fill="none" stroke-width="${strokeWidth}" stroke-linecap="round" />`;
 }
 
 export function screenSpaceLinesToSvg(screenSpaceLines: ScreenSpaceLines, width: number, height: number): string {

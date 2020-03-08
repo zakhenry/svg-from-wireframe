@@ -24,7 +24,7 @@ import {
   VertexBuffer,
 } from '@babylonjs/core';
 import { fromWorker } from 'observable-webworker';
-import { BehaviorSubject, Observable, of, Subject } from 'rxjs';
+import { BehaviorSubject, concat, Observable, of, Subject } from 'rxjs';
 import { filter, map, mergeMap, pairwise, startWith, switchMap, take, tap } from 'rxjs/operators';
 import { MeshToSvgWorkerPayload } from 'wireframe-svg';
 import { createMeshPair, MeshPairData } from './load-mesh';
@@ -36,60 +36,48 @@ import { createMeshPair, MeshPairData } from './load-mesh';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AppComponent implements AfterViewInit {
-  title = 'wireframe-svg-maker';
-  svgVisible = true;
-
-  triggerRender$ = new Subject();
-
-  continousRender$ = new BehaviorSubject(false);
-
-  workerInput$: Subject<MeshToSvgWorkerPayload> = new Subject();
-
-  workerOutput$: Observable<string> = this.workerInput$.pipe(
-    mergeMap((input) => {
-      return fromWorker<MeshToSvgWorkerPayload, string>(
-        () => new Worker('./mesh-to-svg.worker', { type: 'module' }),
-        of(input),
-        input => [
-          input.mesh.positions.buffer,
-          input.mesh.indices.buffer,
-          input.mesh.normals.buffer,
-          input.wireframe.positions.buffer,
-          input.wireframe.indices.buffer,
-        ]).pipe(take(1))
-
-    })
-  );
-
-
-  @ViewChild('canvas') canvas: ElementRef;
-  @ViewChild('svg') svg: ElementRef;
-
   constructor(
     private zone: NgZone,
     private http: HttpClient,
     private renderer: Renderer2,
     private cd: ChangeDetectorRef,
-    private sanitizer: DomSanitizer) {
-  }
+    private sanitizer: DomSanitizer,
+  ) {}
+  public title = 'wireframe-svg-maker';
+  public svgVisible = true;
 
-  public toggleSvgVisible(): void {
-    this.svgVisible = !this.svgVisible;
-  }
+  public triggerRender$ = new Subject();
 
-  public toggleContinuousRender(): void {
-    this.continousRender$.next(!this.continousRender$.value);
-  }
+  public continuousRender$ = new BehaviorSubject(false);
 
-  public triggerRender(): void {
-    this.triggerRender$.next();
-  }
+  public workerInput$: Subject<MeshToSvgWorkerPayload> = new Subject();
 
-  public svg$: Observable<SafeUrl> = this.workerOutput$.pipe(
-    map((svg) => {
-      return URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' }));
+  public workerOutput$: Observable<string> = this.workerInput$.pipe(
+    mergeMap(input => {
+      return fromWorker<MeshToSvgWorkerPayload, string>(
+        () => new Worker('./mesh-to-svg.worker', { type: 'module' }),
+        of(input),
+        i => [
+          i.mesh.positions.buffer,
+          i.mesh.indices.buffer,
+          i.mesh.normals.buffer,
+          i.wireframe.positions.buffer,
+          i.wireframe.indices.buffer,
+        ],
+      ).pipe(take(1));
     }),
-    startWith(null),
+  );
+
+  @ViewChild('canvas') canvas: ElementRef;
+  @ViewChild('svg') svg: ElementRef;
+
+  public svg$: Observable<SafeUrl> = concat(
+    of(null),
+    this.workerOutput$.pipe(
+      map(svg => {
+        return URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' }));
+      }),
+    ),
     pairwise(),
     map(([previous, current]) => {
       if (previous) {
@@ -101,8 +89,19 @@ export class AppComponent implements AfterViewInit {
     filter(url => !!url),
   );
 
-  public ngAfterViewInit() {
+  public toggleSvgVisible(): void {
+    this.svgVisible = !this.svgVisible;
+  }
 
+  public toggleContinuousRender(): void {
+    this.continuousRender$.next(!this.continuousRender$.value);
+  }
+
+  public triggerRender(): void {
+    this.triggerRender$.next();
+  }
+
+  public ngAfterViewInit() {
     const canvasElement: HTMLCanvasElement = this.canvas.nativeElement;
 
     const engine = new Engine(canvasElement, true);
@@ -137,7 +136,6 @@ export class AppComponent implements AfterViewInit {
 
     const ortho = true;
     if (ortho) {
-
       camera.mode = Camera.ORTHOGRAPHIC_CAMERA;
 
       camera.minZ = -10000;
@@ -170,10 +168,13 @@ export class AppComponent implements AfterViewInit {
     // Default intensity is 1. Let's dim the light a small amount
     light.intensity = 0.7;
 
-    const render$ = new Observable(observer => {
-      const ref = camera.onViewMatrixChangedObservable.add(() => observer.next());
-      return () => camera.onViewMatrixChangedObservable.remove(ref);
-    }).pipe(startWith(null));
+    const render$ = concat(
+      of(null),
+      new Observable(observer => {
+        const ref = camera.onViewMatrixChangedObservable.add(() => observer.next());
+        return () => camera.onViewMatrixChangedObservable.remove(ref);
+      }),
+    );
 
     this.zone.runOutsideAngular(() => engine.runRenderLoop(() => scene.render()));
 
@@ -186,50 +187,53 @@ export class AppComponent implements AfterViewInit {
     // const model = 'cylinder';
     // const model = 'inside-outside-cylinder';
 
-    this.http.get<MeshPairData>(`/assets/${model}.json`).pipe(tap((res) => {
+    this.http
+      .get<MeshPairData>(`/assets/${model}.json`)
+      .pipe(
+        tap(res => {
+          const { mesh, edgesMesh } = createMeshPair(scene, res);
+          edgesMesh.color = Color3.Black();
+          edgesMesh.parent = mesh;
 
-      const { mesh, edgesMesh } = createMeshPair(scene, res);
-      edgesMesh.color = Color3.Black();
-      edgesMesh.parent = mesh;
+          const material = new StandardMaterial(res.id + 'mat', scene);
+          material.diffuseColor = Color3.White();
+          material.sideOrientation = Material.CounterClockWiseSideOrientation;
+          material.alpha = 0.5;
+          mesh.material = material;
 
-      const material = new StandardMaterial(res.id + 'mat', scene);
-      material.diffuseColor = Color3.White();
-      material.sideOrientation = Material.CounterClockWiseSideOrientation;
-      material.alpha = 0.5;
-      mesh.material = material;
+          mesh.rotate(Vector3.Left(), Math.PI / 2);
 
-      mesh.rotate(Vector3.Left(), Math.PI / 2);
+          this.continuousRender$
+            .pipe(
+              switchMap(continuousRender => (continuousRender ? render$ : this.triggerRender$)),
+              tap(() => {
+                const inputRender: MeshToSvgWorkerPayload = {
+                  mesh: {
+                    positions: mesh.getVerticesData(VertexBuffer.PositionKind, true, true) as Float32Array,
+                    indices: Int32Array.from(mesh.getIndices()),
+                    normals: mesh.getVerticesData(VertexBuffer.NormalKind, true, true) as Float32Array,
+                  },
+                  wireframe: {
+                    positions: edgesMesh.getVerticesData(VertexBuffer.PositionKind, true, true) as Float32Array,
+                    indices: Int32Array.from(edgesMesh.getIndices()),
+                  },
+                  meshWorldMatrix: mesh.getWorldMatrix().toArray() as Float32Array,
+                  sceneTransformMatrix: scene.getTransformMatrix().toArray() as Float32Array,
+                  sceneViewMatrix: scene.getViewMatrix().toArray() as Float32Array,
+                  sceneProjectionMatrix: scene.getProjectionMatrix().toArray() as Float32Array,
+                  viewport: scene.activeCamera.viewport,
+                  cameraForwardVector: (scene.activeCamera as ArcRotateCamera).getFrontPosition(1).asArray(),
+                  width: scene.getEngine().getRenderWidth(),
+                  height: scene.getEngine().getRenderHeight(),
+                };
 
-      this.continousRender$.pipe(
-        switchMap(continousRender => continousRender ? render$ : this.triggerRender$),
-        tap(() => {
-
-          const inputRender: MeshToSvgWorkerPayload = {
-            mesh: {
-              positions: mesh.getVerticesData(VertexBuffer.PositionKind, true, true) as Float32Array,
-              indices: Int32Array.from(mesh.getIndices()),
-              normals: mesh.getVerticesData(VertexBuffer.NormalKind, true, true) as Float32Array,
-            },
-            wireframe: {
-              positions: edgesMesh.getVerticesData(VertexBuffer.PositionKind, true, true) as Float32Array,
-              indices: Int32Array.from(edgesMesh.getIndices()),
-            },
-            meshWorldMatrix: mesh.getWorldMatrix().toArray() as Float32Array,
-            sceneTransformMatrix: scene.getTransformMatrix().toArray() as Float32Array,
-            sceneViewMatrix: scene.getViewMatrix().toArray() as Float32Array,
-            sceneProjectionMatrix: scene.getProjectionMatrix().toArray() as Float32Array,
-            viewport: scene.activeCamera.viewport,
-            cameraForwardVector: (scene.activeCamera as ArcRotateCamera).getFrontPosition(1).asArray(),
-            width: scene.getEngine().getRenderWidth(), height: scene.getEngine().getRenderHeight(),
-          };
-
-          this.workerInput$.next(inputRender);
-
+                this.workerInput$.next(inputRender);
+              }),
+            )
+            .subscribe();
         }),
-      ).subscribe();
-
-    })).subscribe();
-
+      )
+      .subscribe();
   }
 
   public saveSvg(url: SafeUrl) {
