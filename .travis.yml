@@ -27,16 +27,7 @@ script:
   - yarn prettier:check
   # tests
   - yarn lib:test:ci
-  # build
-  - yarn lib:build:prod
-  - yarn demo:build:prod --progress=false --base-href "https://zakhenry.github.io/wireframe-svg/"
-  - sed -i 's/<base href="https:\/\/zakhenry.github.io\/wireframe-svg\/">/<base href="\/">/g' dist/wireframe-svg-demo/index.html
-  - cd ./dist/wireframe-svg-demo
-  - nohup http-server-spa . index.html 4765 &
-  - cd ../..
-  - sleep 5
-  - sed -i 's/<base href="\/">/<base href="https:\/\/zakhenry.github.io\/wireframe-svg\/">/g' dist/wireframe-svg-demo/index.html
-
+  # prep deploy
   - rm dist/wireframe-svg/README.md && cp README.md dist/wireframe-svg
   - cp LICENSE dist/wireframe-svg
 
