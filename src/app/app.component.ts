@@ -8,6 +8,8 @@ import {
   NgZone,
   Renderer2,
   ViewChild,
+  Pipe,
+  PipeTransform,
 } from '@angular/core';
 import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
 import {
@@ -25,7 +27,7 @@ import {
 } from '@babylonjs/core';
 import { fromWorker } from 'observable-webworker';
 import { BehaviorSubject, concat, Observable, of, Subject } from 'rxjs';
-import { filter, map, mergeMap, pairwise, startWith, switchMap, take, tap } from 'rxjs/operators';
+import { filter, map, mergeMap, pairwise, switchMap, take, tap } from 'rxjs/operators';
 import { MeshToSvgWorkerPayload } from 'wireframe-svg';
 import { createMeshPair, MeshPairData } from './load-mesh';
 
@@ -71,7 +73,7 @@ export class AppComponent implements AfterViewInit {
   @ViewChild('canvas') canvas: ElementRef;
   @ViewChild('svg') svg: ElementRef;
 
-  public svg$: Observable<SafeUrl> = concat(
+  public svg$: Observable<string> = concat(
     of(null),
     this.workerOutput$.pipe(
       map(svg => {
@@ -84,7 +86,7 @@ export class AppComponent implements AfterViewInit {
         setTimeout(() => URL.revokeObjectURL(previous));
       }
 
-      return this.sanitizer.bypassSecurityTrustUrl(current);
+      return current;
     }),
     filter(url => !!url),
   );
@@ -107,7 +109,7 @@ export class AppComponent implements AfterViewInit {
     const engine = new Engine(canvasElement, true);
 
     const scene = new Scene(engine);
-    scene.clearColor = new Color4(1, 1, 1, 1);
+    scene.clearColor = new Color4(0, 0, 0, 1);
     scene.useRightHandedSystem = true;
 
     const camera = new ArcRotateCamera(
@@ -192,7 +194,7 @@ export class AppComponent implements AfterViewInit {
       .pipe(
         tap(res => {
           const { mesh, edgesMesh } = createMeshPair(scene, res);
-          edgesMesh.color = Color3.Black();
+          edgesMesh.color = Color3.White();
           edgesMesh.parent = mesh;
 
           const material = new StandardMaterial(res.id + 'mat', scene);
@@ -242,5 +244,16 @@ export class AppComponent implements AfterViewInit {
     link.href = (url as any).changingThisBreaksApplicationSecurity;
     link.download = 'wireframe.svg';
     link.dispatchEvent(new MouseEvent(`click`, { bubbles: true, cancelable: true, view: window }));
+  }
+}
+
+@Pipe({
+  name: 'safeUrl',
+})
+export class SafeUrlPipe implements PipeTransform {
+  constructor(private domSanitizer: DomSanitizer) {}
+
+  public transform(url: string): SafeUrl {
+    return this.domSanitizer.bypassSecurityTrustUrl(url);
   }
 }

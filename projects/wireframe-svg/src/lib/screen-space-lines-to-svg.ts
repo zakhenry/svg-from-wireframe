@@ -80,7 +80,7 @@ export function screenSpaceLinesToSvg(screenSpaceLines: ScreenSpaceLines, width:
   const { obscured, visible } = screenSpaceLines;
 
   return `<svg viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
-  ${createPathElement(obscured, 'lightgrey', 1)}
-  ${createPathElement(visible, 'black', 2)}
+  ${createPathElement(obscured, 'darkgrey', 2)}
+  ${createPathElement(visible, 'white', 4)}
 </svg>`;
 }

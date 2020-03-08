@@ -8,7 +8,7 @@
 
 <ng-container *ngIf="svgVisible">
   <ng-container *ngIf="svg$ | async as url">
-    <img [src]="url" alt="" />
+    <img [src]="url | safeUrl" alt="" />
     <button (click)="saveSvg(url)">save svg</button>
   </ng-container>
 </ng-container>
