@@ -23,13 +23,13 @@ install:
 
 script:
   # lint
-  - yarn run demo:lint:check
-  - yarn run prettier:check
+  - yarn demo:lint:check
+  - yarn prettier:check
   # tests
-  - yarn run lib:test:ci
+  - yarn lib:test:ci
   # build
-  - yarn run lib:build:prod
-  - yarn run demo:build:prod --progress=false --base-href "https://zakhenry.github.io/wireframe-svg/"
+  - yarn lib:build:prod
+  - yarn demo:build:prod --progress=false --base-href "https://zakhenry.github.io/wireframe-svg/"
   - sed -i 's/<base href="https:\/\/zakhenry.github.io\/wireframe-svg\/">/<base href="\/">/g' dist/wireframe-svg-demo/index.html
   - cd ./dist/wireframe-svg-demo
   - nohup http-server-spa . index.html 4765 &

@@ -17,7 +17,7 @@
     "demo:lint:check": "yarn run ng lint",
     "demo:lint:fix": "yarn run demo:lint:check --fix",
     "------------------ LIB COMMANDS -----------------": "",
-    "lib:build:prod": "yarn run ng build --project wireframe-svg",
+    "lib:build:prod": "yarn run ng build --project wireframe-svg --prod",
     "lib:build:watch": "yarn run lib:build:prod --watch",
     "lib:test:watch": "yarn run ng test --project wireframe-svg",
     "lib:test:ci": "yarn run ng test --project wireframe-svg --watch false",
