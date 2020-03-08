@@ -24,13 +24,10 @@ import {
   VertexBuffer,
 } from '@babylonjs/core';
 import { fromWorker } from 'observable-webworker';
-import { BehaviorSubject, Observable, of, Subject } from 'rxjs';
-import { filter, map, pairwise, share, startWith, switchAll, switchMap, take, tap } from 'rxjs/operators';
-import { getSilhouetteCandidates } from './find-silhouette-lines';
-import { MeshToSvgWorkerPayload } from './interfaces';
+import { BehaviorSubject, Observable, Subject } from 'rxjs';
+import { filter, map, pairwise, share, startWith, switchAll, switchMap, tap } from 'rxjs/operators';
+import { MeshToSvgWorkerInitPayload, MeshToSvgWorkerPayload, MeshToSvgWorkerRenderPayload } from 'wireframe-svg';
 import { createMeshPair, MeshPairData } from './load-mesh';
-import { ScreenSpaceLines } from './mesh-to-screen-space';
-import { screenSpaceLinesToFittedSvg } from './screen-space-lines-to-svg';
 
 @Component({
   selector: 'app-root',
@@ -45,6 +42,20 @@ export class AppComponent implements AfterViewInit {
   triggerRender$ = new Subject();
 
   continousRender$ = new BehaviorSubject(false);
+
+  workerInput$: Subject<MeshToSvgWorkerPayload> = new Subject();
+  workerOutput$: Observable<string> = fromWorker(
+    () => new Worker('./mesh-to-svg.worker', { type: 'module' }),
+    this.workerInput$,
+    input => {
+      return input.type === 'init' ? [
+        input.mesh.positions.buffer,
+        input.mesh.indices.buffer,
+        input.mesh.normals.buffer,
+        input.wireframe.positions.buffer,
+        input.wireframe.indices.buffer,
+      ] : [];
+    })
 
   @ViewChild('canvas') canvas: ElementRef;
   @ViewChild('svg') svg: ElementRef;
@@ -74,7 +85,7 @@ export class AppComponent implements AfterViewInit {
     this.cd.detectChanges();
   }));
 
-  public svg$: Observable<SafeUrl> = this.lines$.pipe(
+  public svg$: Observable<SafeUrl> = this.workerOutput$.pipe(
     map((svg) => {
       return URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' }));
     }),
@@ -189,20 +200,27 @@ export class AppComponent implements AfterViewInit {
 
       mesh.rotate(Vector3.Left(), Math.PI / 2);
 
-      this.lines$$.next(this.continousRender$.pipe(
-        switchMap(continousRender => continousRender ? render$ : this.triggerRender$),
-        switchMap(() => {
+      const inputInit: MeshToSvgWorkerInitPayload = {
+        type: 'init',
+        mesh: {
+          positions: mesh.getVerticesData(VertexBuffer.PositionKind, true, true) as Float32Array,
+          indices: Int32Array.from(mesh.getIndices()),
+          normals: mesh.getVerticesData(VertexBuffer.NormalKind, true, true) as Float32Array,
+        },
+        wireframe: {
+          positions: edgesMesh.getVerticesData(VertexBuffer.PositionKind, true, true) as Float32Array,
+          indices: Int32Array.from(edgesMesh.getIndices()),
+        },
+      };
 
-          const input: MeshToSvgWorkerPayload = {
-            mesh: {
-              positions: mesh.getVerticesData(VertexBuffer.PositionKind, true, true) as Float32Array,
-              indices: Int32Array.from(mesh.getIndices()),
-              normals: mesh.getVerticesData(VertexBuffer.NormalKind, true, true) as Float32Array,
-            },
-            wireframe: {
-              positions: edgesMesh.getVerticesData(VertexBuffer.PositionKind, true, true) as Float32Array,
-              indices: Int32Array.from(edgesMesh.getIndices()),
-            },
+      this.workerInput$.next(inputInit);
+
+      this.continousRender$.pipe(
+        switchMap(continousRender => continousRender ? render$ : this.triggerRender$),
+        tap(() => {
+
+          const inputRender: MeshToSvgWorkerRenderPayload = {
+            type: 'render',
             meshWorldMatrix: mesh.getWorldMatrix().toArray() as Float32Array,
             sceneTransformMatrix: scene.getTransformMatrix().toArray() as Float32Array,
             sceneViewMatrix: scene.getViewMatrix().toArray() as Float32Array,
@@ -212,28 +230,14 @@ export class AppComponent implements AfterViewInit {
             width: scene.getEngine().getRenderWidth(), height: scene.getEngine().getRenderHeight(),
           };
 
-          return fromWorker(
-            () => new Worker('./mesh-to-svg.worker', { type: 'module' }),
-            of(input),
-            input => {
-              return [
-                input.mesh.positions.buffer,
-                input.mesh.indices.buffer,
-                input.mesh.normals.buffer,
-                input.wireframe.positions.buffer,
-                input.wireframe.indices.buffer,
-              ];
-            }).pipe(take(1));
+          this.workerInput$.next(inputRender);
 
-        })));
+        })
+      ).subscribe();
 
-    })).subscribe(() => {
-
-    });
+    })).subscribe();
 
   }
-
-
 
   public saveSvg(url: SafeUrl) {
     const link = this.renderer.createElement('a');
