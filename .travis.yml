@@ -27,6 +27,8 @@ script:
   - yarn prettier:check
   # tests
   - yarn lib:test:ci
+  # build
+  - yarn lib:build:prod
   # prep deploy
   - rm dist/wireframe-svg/README.md && cp README.md dist/wireframe-svg
   - cp LICENSE dist/wireframe-svg
