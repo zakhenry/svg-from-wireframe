@@ -1,10 +1,10 @@
 import { Scalar } from "./math.scalar";
-import { Epsilon } from './math.constants';
 import { Viewport } from './math.viewport';
 import { DeepImmutable, Nullable, FloatArray, float } from "../types";
 import { ArrayTools } from '../Misc/arrayTools';
-import { IPlaneLike } from './math.like';
 import { _TypeStore } from '../Misc/typeStore';
+
+export const Epsilon = 0.001;
 
 /**
  * Class representing a vector containing 2 coordinates
@@ -5286,39 +5286,6 @@ export class Matrix {
         rm[15] = mm[15];
         // identity-ness does not change when transposing
         result._updateIdentityStatus((matrix as Matrix)._isIdentity, (matrix as Matrix)._isIdentityDirty);
-    }
-
-    /**
-     * Computes a reflection matrix from a plane
-     * @param plane defines the reflection plane
-     * @returns a new matrix
-     */
-    public static Reflection(plane: DeepImmutable<IPlaneLike>): Matrix {
-        var matrix = new Matrix();
-        Matrix.ReflectionToRef(plane, matrix);
-        return matrix;
-    }
-
-    /**
-     * Computes a reflection matrix from a plane
-     * @param plane defines the reflection plane
-     * @param result defines the target matrix
-     */
-    public static ReflectionToRef(plane: DeepImmutable<IPlaneLike>, result: Matrix): void {
-        plane.normalize();
-        var x = plane.normal.x;
-        var y = plane.normal.y;
-        var z = plane.normal.z;
-        var temp = -2 * x;
-        var temp2 = -2 * y;
-        var temp3 = -2 * z;
-        Matrix.FromValuesToRef(
-            temp * x + 1, temp2 * x, temp3 * x, 0.0,
-            temp * y, temp2 * y + 1, temp3 * y, 0.0,
-            temp * z, temp2 * z, temp3 * z + 1, 0.0,
-            temp * plane.d, temp2 * plane.d, temp3 * plane.d, 1.0,
-            result
-        );
     }
 
     /**
