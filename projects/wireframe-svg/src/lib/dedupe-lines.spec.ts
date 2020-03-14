@@ -1,4 +1,4 @@
-import { Vector2 } from '@babylonjs/core';
+import { Vector2 } from './Maths';
 import { dedupeLines } from './dedupe-lines';
 import { ProjectedLine } from './interfaces';
 

@@ -1,4 +1,5 @@
-import { Matrix, Mesh, NullEngine, Scene, Vector3, VertexData, Viewport } from '@babylonjs/core';
+import { Mesh, NullEngine, Scene, VertexData } from '@babylonjs/core';
+import { Matrix, Vector3, Viewport } from './Maths';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { MeshToSvgWorkerPayload } from './external-interfaces';
@@ -21,7 +22,7 @@ export class MeshToSvg {
 
   public render(input: MeshToSvgWorkerPayload): string {
     const meshWorldMatrix = Matrix.FromArray(input.meshWorldMatrix);
-    this.mesh._worldMatrix = meshWorldMatrix;
+    this.mesh._worldMatrix = meshWorldMatrix as any; // @todo(refactor-from-babylon)
 
     const sceneTransformMatrix = Matrix.FromArray(input.sceneTransformMatrix);
     const sceneViewMatrix = Matrix.FromArray(input.sceneViewMatrix);

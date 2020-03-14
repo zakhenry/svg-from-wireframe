@@ -1,4 +1,4 @@
-import { Vector2 } from '@babylonjs/core';
+import { Vector2 } from './Maths';
 import { getIntersectionPointFast } from './compute-intersection';
 import { LineSegment } from './interfaces';
 

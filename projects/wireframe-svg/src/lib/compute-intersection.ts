@@ -1,4 +1,4 @@
-import { Vector2 } from '@babylonjs/core';
+import { Vector2 } from './Maths';
 import { LineSegment } from './interfaces';
 
 export function getIntersectionPointFast(lineA: LineSegment, lineB: LineSegment): Vector2 | false {

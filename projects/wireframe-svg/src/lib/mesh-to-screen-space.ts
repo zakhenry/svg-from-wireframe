@@ -1,8 +1,9 @@
-import { Matrix, Ray, Vector2, Vector3, Viewport } from '@babylonjs/core';
+import { Ray } from '@babylonjs/core';
 import { getIntersectionPointFast } from './compute-intersection';
 import { dedupeLines } from './dedupe-lines';
 import { findSilhouetteLines } from './find-silhouette-lines';
 import { EdgeCandidate, LineSegment, LineSegment3D, ProjectedLine } from './interfaces';
+import { Matrix, Vector3, Vector2, Viewport } from './Maths';
 
 export interface ScreenSpaceLines {
   obscured: LineSegment[];
@@ -115,7 +116,7 @@ export function viewSpaceLinesToScreenSpaceLines(
         sceneProjectionMatrix,
       );
 
-      const ray = Ray.CreateNewFromTo(start, Vector3.TransformCoordinates(testPointViewSpace, meshWorldMatrix));
+      const ray = Ray.CreateNewFromTo(start as any /* @todo(refactor-from-babylon)*/, Vector3.TransformCoordinates(testPointViewSpace, meshWorldMatrix) as any /* @todo(refactor-from-babylon)*/);
 
       const obscured = isObscured(ray);
 

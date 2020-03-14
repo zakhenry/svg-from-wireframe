@@ -1,6 +1,6 @@
-import { IndicesArray, Matrix, Vector3, VertexData } from '@babylonjs/core';
-import { FloatArray } from '@babylonjs/core/types';
-import { EdgeCandidate, LineSegment3D } from './interfaces';
+import { VertexData } from '@babylonjs/core';
+import { EdgeCandidate, LineSegment3D, IndicesArray, FloatArray } from './interfaces';
+import { Vector3, Matrix } from './Maths';
 
 export function getSilhouetteCandidates(indices: IndicesArray, vertices: FloatArray): EdgeCandidate[] {
   const normalsData = new Float32Array(vertices.length);
