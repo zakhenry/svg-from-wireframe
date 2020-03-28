@@ -117,7 +117,7 @@ export function viewSpaceLinesToScreenSpaceLines(
         sceneProjectionMatrix,
       );
 
-      const ray = Ray.CreateNewFromTo(start as any /* @todo(refactor-from-babylon)*/, Vector3.TransformCoordinates(testPointViewSpace, meshWorldMatrix) as any /* @todo(refactor-from-babylon)*/);
+      const ray = Ray.CreateNewFromTo(start, Vector3.TransformCoordinates(testPointViewSpace, meshWorldMatrix));
 
       const obscured = isObscured(ray);
 

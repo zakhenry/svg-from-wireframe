@@ -2,16 +2,20 @@ import { Matrix, Vector3 } from './Maths/vector';
 import { intersectTriangles } from './Maths/mesh';
 import { Ray } from './Maths/ray';
 
-export function getRayIntersection(ray: Ray, positionsPrimitive: Float32Array, indices: Int32Array, worldMatrix: Matrix): number | null {
-
+export function getRayIntersection(
+  ray: Ray,
+  positionsPrimitive: Float32Array,
+  indices: Int32Array,
+  worldMatrix: Matrix,
+): number | null {
   const tm = Matrix.Identity();
   worldMatrix.invertToRef(tm);
   const testRay = Ray.Transform(ray, tm);
 
   const positions = [];
 
-  for(let i=0; i<positionsPrimitive.length; i+=3) {
-    positions.push(new Vector3(positionsPrimitive[i], positionsPrimitive[i+1], positionsPrimitive[i+2]));
+  for (let i = 0; i < positionsPrimitive.length; i += 3) {
+    positions.push(new Vector3(positionsPrimitive[i], positionsPrimitive[i + 1], positionsPrimitive[i + 2]));
   }
 
   const intersectionInfo = intersectTriangles(testRay, positions, indices);

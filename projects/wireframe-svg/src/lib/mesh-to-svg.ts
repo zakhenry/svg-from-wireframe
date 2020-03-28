@@ -29,7 +29,6 @@ export class MeshToSvg {
     const width = input.width;
     const height = input.height;
     const isObscured = ray => {
-
       const pick = getRayIntersection(ray, input.mesh.positions, input.mesh.indices, meshWorldMatrix);
 
       return pick !== null && ray.length - pick > 0.01;

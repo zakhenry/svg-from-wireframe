@@ -1,13 +1,9 @@
-import { IndicesArray, Nullable } from '../types';
+import { IndicesArray, Nullable } from './types';
 import { IntersectionInfo } from './intersectionInfo';
 import { Vector3 } from './vector';
 import { Ray } from './ray';
 
-export function intersectTriangles(
-  ray: Ray,
-  positions: Vector3[],
-  indices: IndicesArray,
-): Nullable<IntersectionInfo> {
+export function intersectTriangles(ray: Ray, positions: Vector3[], indices: IndicesArray): Nullable<IntersectionInfo> {
   var intersectInfo: Nullable<IntersectionInfo> = null;
 
   // Triangles test

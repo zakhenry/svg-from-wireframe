@@ -1,5 +1,5 @@
 import { ArrayTools } from './arrayTools';
-import { DeepImmutable, float } from '../types';
+import { DeepImmutable, float } from './types';
 import { Scalar } from './scalar';
 import { Viewport } from './viewport';
 
@@ -723,7 +723,6 @@ export class Vector3 {
  * Class used to store matrix data (4x4)
  */
 export class Matrix {
-
   /**
    * Gets the internal data of the matrix
    */
