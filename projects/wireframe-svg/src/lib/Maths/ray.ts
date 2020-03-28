@@ -1,15 +1,14 @@
-import { ArrayTools } from '../Misc/arrayTools';
+import { ArrayTools } from './arrayTools';
 import { DeepImmutable, Nullable } from '../types';
 
 import { IntersectionInfo } from './intersectionInfo';
-import { Matrix, Vector3 } from './math.vector';
+import { Matrix, Vector3 } from './vector';
 
 /**
  * Class representing a ray with position and direction
  */
 export class Ray {
     private static readonly TmpVector3 = ArrayTools.BuildArray(6, Vector3.Zero);
-    private _tmpRay: Ray;
 
     /**
      * Creates a new ray

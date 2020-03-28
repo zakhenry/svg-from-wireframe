@@ -1,5 +1,5 @@
-import { Vector2 } from './Maths';
 import { LineSegment } from './interfaces';
+import { Vector2 } from './Maths/vector';
 
 export function getIntersectionPointFast(lineA: LineSegment, lineB: LineSegment): Vector2 | false {
   // exit early if any of the points are coincident

@@ -1,4 +1,4 @@
-import { Matrix, Vector3 } from './Maths';
+import { Matrix, Vector3 } from './Maths/vector';
 import { intersectTriangles } from './Maths/mesh';
 import { Ray } from './Maths/ray';
 
@@ -14,7 +14,7 @@ export function getRayIntersection(ray: Ray, positionsPrimitive: Float32Array, i
     positions.push(new Vector3(positionsPrimitive[i], positionsPrimitive[i+1], positionsPrimitive[i+2]));
   }
 
-  const intersectionInfo = intersectTriangles(testRay, positions, indices, 3, false, false);
+  const intersectionInfo = intersectTriangles(testRay, positions, indices);
 
   if (!intersectionInfo) {
     return null;

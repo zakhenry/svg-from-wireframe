@@ -1,6 +1,6 @@
 import { EdgeCandidate, FloatArray, IndicesArray, LineSegment3D } from './interfaces';
-import { Matrix, Vector3 } from './Maths';
 import { computeNormals } from './Maths/compute-normals';
+import { Matrix, Vector3 } from './Maths/vector';
 
 export function getSilhouetteCandidates(indices: IndicesArray, vertices: FloatArray): EdgeCandidate[] {
   const normalsData = new Float32Array(vertices.length);

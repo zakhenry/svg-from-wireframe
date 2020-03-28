@@ -1,10 +1,11 @@
 import { getRayIntersection } from './get-ray-intersection';
-import { Matrix, Vector3, Viewport } from './Maths';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { MeshToSvgWorkerPayload } from './external-interfaces';
 import { getSilhouetteCandidates } from './find-silhouette-lines';
 import { EdgeCandidate, LineSegment3D } from './interfaces';
+import { Matrix, Vector3 } from './Maths/vector';
+import { Viewport } from './Maths/viewport';
 import { viewSpaceLinesToScreenSpaceLines } from './mesh-to-screen-space';
 import { screenSpaceLinesToFittedSvg } from './screen-space-lines-to-svg';
 
