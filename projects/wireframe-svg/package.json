@@ -2,7 +2,6 @@
   "name": "wireframe-to-svg",
   "version": "0.0.1",
   "peerDependencies": {
-    "tslib": "^1.10.0",
-    "@babylonjs/core": "^4.1.0"
+    "tslib": "^1.10.0"
   }
 }

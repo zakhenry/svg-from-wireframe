@@ -1,5 +1,5 @@
-import { Vector2 } from '@babylonjs/core';
 import { LineSegment } from './interfaces';
+import { Vector2 } from './Maths/vector';
 import { ScreenSpaceLines } from './mesh-to-screen-space';
 
 export function screenSpaceLinesToFittedSvg(

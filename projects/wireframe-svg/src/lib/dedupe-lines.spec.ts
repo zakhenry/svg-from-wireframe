@@ -1,6 +1,6 @@
-import { Vector2 } from '@babylonjs/core';
 import { dedupeLines } from './dedupe-lines';
 import { ProjectedLine } from './interfaces';
+import { Vector2 } from './Maths/vector';
 
 describe('dedupe lines', () => {
   it('should remove exact duplicated lines by screenspace segment', () => {

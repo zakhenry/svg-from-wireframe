@@ -1,6 +1,6 @@
-import { Vector2 } from '@babylonjs/core';
 import { getIntersectionPointFast } from './compute-intersection';
 import { LineSegment } from './interfaces';
+import { Vector2 } from './Maths/vector';
 
 describe('intersection', () => {
   //  ----

@@ -1,27 +1,25 @@
-import { Matrix, Mesh, NullEngine, Scene, Vector3, VertexData, Viewport } from '@babylonjs/core';
+import { getRayIntersection } from './get-ray-intersection';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { MeshToSvgWorkerPayload } from './external-interfaces';
 import { getSilhouetteCandidates } from './find-silhouette-lines';
 import { EdgeCandidate, LineSegment3D } from './interfaces';
+import { Matrix, Vector3 } from './Maths/vector';
+import { Viewport } from './Maths/viewport';
 import { viewSpaceLinesToScreenSpaceLines } from './mesh-to-screen-space';
 import { screenSpaceLinesToFittedSvg } from './screen-space-lines-to-svg';
 
 export class MeshToSvg {
-  private scene: Scene = this.getScene();
-  private mesh: Mesh;
   private silhouetteCandidates: EdgeCandidate[];
   private wireframeLines: LineSegment3D[];
 
   public prepare(input: MeshToSvgWorkerPayload): void {
-    this.mesh = this.getMesh(input.mesh, this.scene);
     this.silhouetteCandidates = getSilhouetteCandidates(input.mesh.indices, input.mesh.positions);
     this.wireframeLines = this.getWireframeLines(input.wireframe.positions);
   }
 
   public render(input: MeshToSvgWorkerPayload): string {
     const meshWorldMatrix = Matrix.FromArray(input.meshWorldMatrix);
-    this.mesh._worldMatrix = meshWorldMatrix;
 
     const sceneTransformMatrix = Matrix.FromArray(input.sceneTransformMatrix);
     const sceneViewMatrix = Matrix.FromArray(input.sceneViewMatrix);
@@ -31,9 +29,9 @@ export class MeshToSvg {
     const width = input.width;
     const height = input.height;
     const isObscured = ray => {
-      const pick = ray.intersectsMesh(this.mesh);
+      const pick = getRayIntersection(ray, input.mesh.positions, input.mesh.indices, meshWorldMatrix);
 
-      return pick.hit && ray.length - pick.distance > 0.01;
+      return pick !== null && ray.length - pick > 0.01;
     };
 
     const screenSpaceLines = viewSpaceLinesToScreenSpaceLines(
@@ -62,28 +60,6 @@ export class MeshToSvg {
         return this.render(input);
       }),
     );
-  }
-
-  private getMesh(input: MeshToSvgWorkerPayload['mesh'], scene: Scene): Mesh {
-    const vertexData = new VertexData();
-    vertexData.positions = input.positions;
-    vertexData.indices = input.indices;
-    vertexData.normals = input.normals;
-
-    const mesh = new Mesh('mesh', scene);
-
-    vertexData.applyToMesh(mesh);
-    // mesh._unIndexed = !indices || indices.length === 0;
-
-    return mesh;
-  }
-
-  private getScene(): Scene {
-    const engine = new NullEngine();
-
-    const scene = new Scene(engine);
-
-    return scene;
   }
 
   private getWireframeLines(wireframePositions: Float32Array): LineSegment3D[] {

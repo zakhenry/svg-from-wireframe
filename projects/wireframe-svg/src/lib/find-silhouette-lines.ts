@@ -1,11 +1,11 @@
-import { IndicesArray, Matrix, Vector3, VertexData } from '@babylonjs/core';
-import { FloatArray } from '@babylonjs/core/types';
-import { EdgeCandidate, LineSegment3D } from './interfaces';
+import { EdgeCandidate, FloatArray, IndicesArray, LineSegment3D } from './interfaces';
+import { computeNormals } from './Maths/compute-normals';
+import { Matrix, Vector3 } from './Maths/vector';
 
 export function getSilhouetteCandidates(indices: IndicesArray, vertices: FloatArray): EdgeCandidate[] {
   const normalsData = new Float32Array(vertices.length);
 
-  VertexData.ComputeNormals(vertices, indices, normalsData, { useRightHandedSystem: true });
+  computeNormals(vertices, indices, normalsData, { useRightHandedSystem: true });
 
   const normals = [];
   for (let i = 0; i < normalsData.length / 3; i++) {

@@ -1,4 +1,7 @@
-import { Vector2, Vector3 } from '@babylonjs/core';
+import { Vector2, Vector3 } from './Maths/vector';
+
+export declare type FloatArray = number[] | Float32Array;
+export declare type IndicesArray = number[] | Int32Array | Uint32Array | Uint16Array;
 
 export type LineSegment = [Vector2, Vector2];
 

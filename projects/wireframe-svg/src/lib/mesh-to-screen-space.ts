@@ -1,8 +1,10 @@
-import { Matrix, Ray, Vector2, Vector3, Viewport } from '@babylonjs/core';
 import { getIntersectionPointFast } from './compute-intersection';
 import { dedupeLines } from './dedupe-lines';
 import { findSilhouetteLines } from './find-silhouette-lines';
 import { EdgeCandidate, LineSegment, LineSegment3D, ProjectedLine } from './interfaces';
+import { Matrix, Vector2, Vector3 } from './Maths/vector';
+import { Viewport } from './Maths/viewport';
+import { Ray } from './Maths/ray';
 
 export interface ScreenSpaceLines {
   obscured: LineSegment[];
