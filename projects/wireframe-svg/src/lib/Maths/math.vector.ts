@@ -3410,7 +3410,7 @@ export class Quaternion {
  */
 export class Matrix {
     private static _updateFlagSeed = 0;
-    private static _identityReadOnly = Matrix.Identity() as DeepImmutable<Matrix>;
+    public static _identityReadOnly = Matrix.Identity() as DeepImmutable<Matrix>;
 
     private _isIdentity = false;
     private _isIdentityDirty = true;
