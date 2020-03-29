@@ -45,7 +45,17 @@ export class MeshToSvg {
   public run(input$: Observable<MeshToSvgWorkerPayload>): Observable<string> {
     return combineLatest([from(import('wasm-svg-from-wireframe')), input$]).pipe(
       map(([wasm, input]) => {
-        console.log('value from rust!', wasm.mesh_to_svg_lines());
+
+        const wasmSvg = wasm.mesh_to_svg_lines(
+          800,
+          600,
+          input.mesh.indices,
+          input.mesh.positions,
+          input.mesh.normals,
+          input.wireframe.indices,
+          input.wireframe.positions,
+        );
+        return wasmSvg;
 
         return this.render(input);
       }),
