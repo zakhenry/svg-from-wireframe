@@ -1,23 +1,14 @@
-import { getRayIntersection } from './get-ray-intersection';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { MeshToSvgWorkerPayload } from './external-interfaces';
-import { getSilhouetteCandidates } from './find-silhouette-lines';
-import { EdgeCandidate, LineSegment3D } from './interfaces';
+import { getSilhouetteCandidates } from './find-edge-lines';
+import { LineSegment3D } from './interfaces';
 import { Matrix, Vector3 } from './Maths/vector';
 import { Viewport } from './Maths/viewport';
 import { viewSpaceLinesToScreenSpaceLines } from './mesh-to-screen-space';
 import { screenSpaceLinesToFittedSvg } from './screen-space-lines-to-svg';
 
 export class MeshToSvg {
-  private silhouetteCandidates: EdgeCandidate[];
-  private wireframeLines: LineSegment3D[];
-
-  public prepare(input: MeshToSvgWorkerPayload): void {
-    this.silhouetteCandidates = getSilhouetteCandidates(input.mesh.indices, input.mesh.positions);
-    this.wireframeLines = this.getWireframeLines(input.wireframe.positions);
-  }
-
   public render(input: MeshToSvgWorkerPayload): string {
     const meshWorldMatrix = Matrix.FromArray(input.meshWorldMatrix);
 
@@ -28,15 +19,13 @@ export class MeshToSvg {
     const cameraForwardVector = Vector3.FromArray(input.cameraForwardVector);
     const width = input.width;
     const height = input.height;
-    const isObscured = ray => {
-      const pick = getRayIntersection(ray, input.mesh.positions, input.mesh.indices, meshWorldMatrix);
 
-      return pick !== null && ray.length - pick > 0.01;
-    };
+    const silhouetteCandidates = getSilhouetteCandidates(input.mesh.indices, input.mesh.positions, input.mesh.normals);
+    const wireframeLines = input.wireframe ? this.getWireframeLines(input.wireframe.positions) : null;
 
     const screenSpaceLines = viewSpaceLinesToScreenSpaceLines(
-      this.wireframeLines,
-      this.silhouetteCandidates,
+      wireframeLines,
+      silhouetteCandidates,
       meshWorldMatrix,
       sceneTransformMatrix,
       sceneViewMatrix,
@@ -45,10 +34,10 @@ export class MeshToSvg {
       cameraForwardVector,
       width,
       height,
-      isObscured,
+      input.mesh,
     );
 
-    const svg = screenSpaceLinesToFittedSvg(screenSpaceLines);
+    const svg = screenSpaceLinesToFittedSvg(screenSpaceLines, input.svgConfig);
 
     return svg;
   }
@@ -56,7 +45,6 @@ export class MeshToSvg {
   public run(input$: Observable<MeshToSvgWorkerPayload>): Observable<string> {
     return input$.pipe(
       map((input: MeshToSvgWorkerPayload) => {
-        this.prepare(input);
         return this.render(input);
       }),
     );
