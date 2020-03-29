@@ -1,4 +1,4 @@
-import { Observable } from 'rxjs';
+import { combineLatest, from, Observable, of } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { MeshToSvgWorkerPayload } from './external-interfaces';
 import { getSilhouetteCandidates } from './find-edge-lines';
@@ -43,12 +43,14 @@ export class MeshToSvg {
   }
 
   public run(input$: Observable<MeshToSvgWorkerPayload>): Observable<string> {
-    return input$.pipe(
-      map((input: MeshToSvgWorkerPayload) => {
+    return combineLatest([from(import('wasm-svg-from-wireframe')), input$]).pipe(
+      map(([wasm, input]) => {
+        console.log('value from rust!', wasm.add(1, 2), input);
         return this.render(input);
       }),
     );
   }
+
 
   private getWireframeLines(wireframePositions: Float32Array): LineSegment3D[] {
     const lines: LineSegment3D[] = [];

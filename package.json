@@ -42,7 +42,8 @@
     "observable-webworker": "^3.2.3",
     "rxjs": "~6.5.4",
     "tslib": "^1.10.0",
-    "zone.js": "~0.10.2"
+    "zone.js": "~0.10.2",
+    "wasm-svg-from-wireframe": "file:./wasm-svg-from-wireframe/pkg"
   },
   "devDependencies": {
     "@angular-devkit/build-angular": "~0.900.4",

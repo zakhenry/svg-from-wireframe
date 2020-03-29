@@ -1,4 +1,3 @@
-import './babylon-shim.worker';
 import { DoWork, ObservableWorker } from 'observable-webworker';
 import { Observable } from 'rxjs';
 import { MeshToSvgWorkerPayload } from 'wireframe-svg';
