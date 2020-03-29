@@ -188,6 +188,7 @@ export class AppComponent implements AfterViewInit {
     // const model = 'blobular-intersection';
     // const model = 'cylinder';
     // const model = 'inside-outside-cylinder';
+    // const model = 'varying-normals';
 
     this.http
       .get<MeshPairData>(`/assets/${model}.json`)

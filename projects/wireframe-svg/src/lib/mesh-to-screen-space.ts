@@ -1,6 +1,7 @@
 import { getIntersectionPointFast } from './compute-intersection';
 import { dedupeLines } from './dedupe-lines';
-import { findSilhouetteLines } from './find-silhouette-lines';
+import { findEdgeLines } from './find-edge-lines';
+import { getRayIntersection } from './get-ray-intersection';
 import { EdgeCandidate, LineSegment, LineSegment3D, ProjectedLine } from './interfaces';
 import { Matrix, Vector2, Vector3 } from './Maths/vector';
 import { Viewport } from './Maths/viewport';
@@ -11,11 +12,9 @@ export interface ScreenSpaceLines {
   visible: LineSegment[];
 }
 
-export type OcclusionTest = (finiteLengthRay: Ray) => boolean;
-
 export function viewSpaceLinesToScreenSpaceLines(
-  wireframeLines: LineSegment3D[],
-  silhouetteCandidates: EdgeCandidate[],
+  wireframeLines: LineSegment3D[] | null,
+  edgeCandidates: EdgeCandidate[],
   meshWorldMatrix: Matrix,
   sceneTransformMatrix: Matrix,
   sceneViewMatrix: Matrix,
@@ -24,14 +23,14 @@ export function viewSpaceLinesToScreenSpaceLines(
   cameraForwardVector: Vector3,
   width: number,
   height: number,
-  isObscured: OcclusionTest,
+  mesh,
 ): ScreenSpaceLines {
   const identity = Matrix.Identity();
 
-  const silhouetteLines = findSilhouetteLines(silhouetteCandidates, meshWorldMatrix, cameraForwardVector);
+  const edgeLines = findEdgeLines(edgeCandidates, meshWorldMatrix, cameraForwardVector, wireframeLines.length > 0);
 
-  const projectedLinesWithDuplicates: ProjectedLine[] = wireframeLines
-    .concat(silhouetteLines)
+  const projectedLinesWithDuplicates: ProjectedLine[] = (wireframeLines || [])
+    .concat(edgeLines)
     .map((viewSpace: LineSegment3D) => {
       const screenSpace = viewSpace.map((v, j) => {
         const coordinates = Vector3.Project(v, meshWorldMatrix, sceneTransformMatrix, viewport);
@@ -119,7 +118,9 @@ export function viewSpaceLinesToScreenSpaceLines(
 
       const ray = Ray.CreateNewFromTo(start, Vector3.TransformCoordinates(testPointViewSpace, meshWorldMatrix));
 
-      const obscured = isObscured(ray);
+      const pick = getRayIntersection(ray, mesh.positions, mesh.indices, meshWorldMatrix);
+
+      const obscured = pick !== null && ray.length - pick > 0.01;
 
       if (currentObscured === null) {
         currentObscured = obscured;

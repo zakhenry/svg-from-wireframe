@@ -1,13 +1,15 @@
+import { SvgConfig, SvgLineConfig } from './external-interfaces';
 import { LineSegment } from './interfaces';
 import { Vector2 } from './Maths/vector';
 import { ScreenSpaceLines } from './mesh-to-screen-space';
 
-export function screenSpaceLinesToFittedSvg(
-  screenSpaceLines: ScreenSpaceLines,
-  width = 800,
-  height = 600,
-  margin = 100,
-): string {
+export function screenSpaceLinesToFittedSvg(screenSpaceLines: ScreenSpaceLines, svgConfig?: SvgConfig): string {
+  const width = svgConfig?.width ?? 800;
+  const height = svgConfig?.height ?? 600;
+  const margin = svgConfig?.margin ?? 100;
+  const visibleLine = svgConfig?.visible ?? { color: 'black', strokeWidth: 4 };
+  const occludedLine = svgConfig ? svgConfig.occluded : { color: 'lightgrey', strokeWidth: 1 };
+
   const { obscured, visible } = screenSpaceLines;
 
   const allLines = obscured.concat(visible);
@@ -56,7 +58,7 @@ export function screenSpaceLinesToFittedSvg(
     ),
   };
 
-  return screenSpaceLinesToSvg(scaledPoints as ScreenSpaceLines, width, height);
+  return screenSpaceLinesToSvg(scaledPoints as ScreenSpaceLines, width, height, visibleLine, occludedLine);
 }
 
 function createPathElement(lines: LineSegment[], stroke: string, strokeWidth: number): string {
@@ -76,11 +78,17 @@ function createPathElement(lines: LineSegment[], stroke: string, strokeWidth: nu
   return `<path d="${pathDef}" stroke="${stroke}" fill="none" stroke-width="${strokeWidth}" stroke-linecap="round" />`;
 }
 
-export function screenSpaceLinesToSvg(screenSpaceLines: ScreenSpaceLines, width: number, height: number): string {
+export function screenSpaceLinesToSvg(
+  screenSpaceLines: ScreenSpaceLines,
+  width: number,
+  height: number,
+  visibleConfig: SvgLineConfig,
+  occludedConfig: SvgLineConfig | null,
+): string {
   const { obscured, visible } = screenSpaceLines;
 
   return `<svg viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
-  ${createPathElement(obscured, 'darkgrey', 2)}
-  ${createPathElement(visible, 'white', 4)}
+  ${occludedConfig ? createPathElement(obscured, occludedConfig.color, occludedConfig.strokeWidth) : ''}
+  ${createPathElement(visible, visibleConfig.color, visibleConfig.strokeWidth)}
 </svg>`;
 }

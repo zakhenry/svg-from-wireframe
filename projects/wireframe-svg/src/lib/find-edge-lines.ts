@@ -2,10 +2,15 @@ import { EdgeCandidate, FloatArray, IndicesArray, LineSegment3D } from './interf
 import { computeNormals } from './Maths/compute-normals';
 import { Matrix, Vector3 } from './Maths/vector';
 
-export function getSilhouetteCandidates(indices: IndicesArray, vertices: FloatArray): EdgeCandidate[] {
-  const normalsData = new Float32Array(vertices.length);
-
-  computeNormals(vertices, indices, normalsData, { useRightHandedSystem: true });
+export function getSilhouetteCandidates(
+  indices: IndicesArray,
+  vertices: FloatArray,
+  normalsData: Float32Array,
+): EdgeCandidate[] {
+  if (!normalsData.length) {
+    normalsData = new Float32Array(vertices.length);
+    computeNormals(vertices, indices, normalsData);
+  }
 
   const normals = [];
   for (let i = 0; i < normalsData.length / 3; i++) {
@@ -64,13 +69,26 @@ export function getSilhouetteCandidates(indices: IndicesArray, vertices: FloatAr
   return edgeCandidates;
 }
 
-export function findSilhouetteLines(
+export function findEdgeLines(
   edgeCandidates: EdgeCandidate[],
   meshWorldMatrix: Matrix,
   cameraForwardVector: Vector3,
+  silhouettesOnly: boolean,
 ): LineSegment3D[] {
   return edgeCandidates
     .filter(edgeCandidate => {
+      if (!silhouettesOnly) {
+        const normalDotProduct = Vector3.Dot(
+          edgeCandidate.adjacentTriangleANormal,
+          edgeCandidate.adjacentTriangleBNormal,
+        );
+
+        // angle between faces is greater than arbitrarily chosen value, the edge should be rendered as it is a "sharp" corner
+        if (normalDotProduct < 0.95) {
+          return true;
+        }
+      }
+
       const normalAWorld = Vector3.TransformNormal(edgeCandidate.adjacentTriangleANormal, meshWorldMatrix);
       const normalBWorld = Vector3.TransformNormal(edgeCandidate.adjacentTriangleBNormal, meshWorldMatrix);
 
