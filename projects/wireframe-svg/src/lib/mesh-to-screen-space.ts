@@ -27,7 +27,12 @@ export function viewSpaceLinesToScreenSpaceLines(
 ): ScreenSpaceLines {
   const identity = Matrix.Identity();
 
-  const edgeLines = findEdgeLines(edgeCandidates, meshWorldMatrix, cameraForwardVector, wireframeLines.length > 0);
+  const edgeLines = findEdgeLines(
+    edgeCandidates,
+    meshWorldMatrix,
+    cameraForwardVector,
+    wireframeLines && wireframeLines.length > 0,
+  );
 
   const projectedLinesWithDuplicates: ProjectedLine[] = (wireframeLines || [])
     .concat(edgeLines)

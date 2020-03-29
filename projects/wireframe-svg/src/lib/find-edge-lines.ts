@@ -5,9 +5,9 @@ import { Matrix, Vector3 } from './Maths/vector';
 export function getSilhouetteCandidates(
   indices: IndicesArray,
   vertices: FloatArray,
-  normalsData: Float32Array,
+  normalsData?: Float32Array,
 ): EdgeCandidate[] {
-  if (!normalsData.length) {
+  if (!normalsData || !normalsData.length) {
     normalsData = new Float32Array(vertices.length);
     computeNormals(vertices, indices, normalsData);
   }
