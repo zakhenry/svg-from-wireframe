@@ -177,8 +177,8 @@ export class AppComponent implements AfterViewInit {
 
     this.zone.runOutsideAngular(() => engine.runRenderLoop(() => scene.render()));
 
-    // const model = 'slotted-cube';
-    const model = 'raspi';
+    const model = 'slotted-cube';
+    // const model = 'raspi';
     // const model = 'diamond';
     // const model = 'brick';
     // const model = 'silhouette';
@@ -222,7 +222,7 @@ export class AppComponent implements AfterViewInit {
                   sceneViewMatrix: scene.getViewMatrix().toArray() as Float32Array,
                   sceneProjectionMatrix: scene.getProjectionMatrix().toArray() as Float32Array,
                   viewport: scene.activeCamera.viewport,
-                  cameraForwardVector: (scene.activeCamera as ArcRotateCamera).getFrontPosition(1).asArray(),
+                  cameraForwardVector: Float32Array.from((scene.activeCamera as ArcRotateCamera).getFrontPosition(1).asArray()),
                   width: scene.getEngine().getRenderWidth(),
                   height: scene.getEngine().getRenderHeight(),
                 };
@@ -234,8 +234,6 @@ export class AppComponent implements AfterViewInit {
         }),
       )
       .subscribe();
-
-    this.triggerRender();
 
   }
 

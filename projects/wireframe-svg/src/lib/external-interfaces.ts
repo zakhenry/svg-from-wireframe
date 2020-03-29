@@ -1,6 +1,5 @@
 type MatrixData = Float32Array;
-
-type Vector3Data = number[];
+type Vector3Data = Float32Array;
 
 export interface TriangleMesh {
   positions: Float32Array;

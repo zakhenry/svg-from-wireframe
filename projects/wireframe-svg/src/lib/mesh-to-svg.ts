@@ -46,18 +46,30 @@ export class MeshToSvg {
     return combineLatest([from(import('wasm-svg-from-wireframe')), input$]).pipe(
       map(([wasm, input]) => {
 
+        debugger;
+
+        if (1) {
+          // return this.render(input);
+        }
+
         const wasmSvg = wasm.mesh_to_svg_lines(
-          800,
-          600,
+          input.width,
+          input.height,
           input.mesh.indices,
           input.mesh.positions,
           input.mesh.normals,
           input.wireframe.indices,
           input.wireframe.positions,
+          input.sceneTransformMatrix,
+          input.sceneViewMatrix,
+          input.sceneProjectionMatrix,
+          input.meshWorldMatrix,
+          input.cameraForwardVector
         );
+
         return wasmSvg;
 
-        return this.render(input);
+
       }),
     );
   }
