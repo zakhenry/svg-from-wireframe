@@ -45,12 +45,12 @@ export class MeshToSvg {
   public run(input$: Observable<MeshToSvgWorkerPayload>): Observable<string> {
     return combineLatest([from(import('wasm-svg-from-wireframe')), input$]).pipe(
       map(([wasm, input]) => {
-        console.log('value from rust!', wasm.add(1, 2), input);
+        console.log('value from rust!', wasm.mesh_to_svg_lines());
+
         return this.render(input);
       }),
     );
   }
-
 
   private getWireframeLines(wireframePositions: Float32Array): LineSegment3D[] {
     const lines: LineSegment3D[] = [];

@@ -2,14 +2,13 @@ import { HttpClient } from '@angular/common/http';
 import {
   AfterViewInit,
   ChangeDetectionStrategy,
-  ChangeDetectorRef,
   Component,
   ElementRef,
   NgZone,
-  Renderer2,
-  ViewChild,
   Pipe,
   PipeTransform,
+  Renderer2,
+  ViewChild,
 } from '@angular/core';
 import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
 import {
@@ -26,7 +25,7 @@ import {
   VertexBuffer,
 } from '@babylonjs/core';
 import { fromWorker } from 'observable-webworker';
-import { BehaviorSubject, concat, Observable, of, Subject } from 'rxjs';
+import { BehaviorSubject, concat, Observable, of, ReplaySubject, Subject } from 'rxjs';
 import { filter, map, mergeMap, pairwise, switchMap, take, tap } from 'rxjs/operators';
 import { MeshToSvgWorkerPayload } from 'wireframe-svg';
 import { createMeshPair, MeshPairData } from './load-mesh';
@@ -42,13 +41,11 @@ export class AppComponent implements AfterViewInit {
     private zone: NgZone,
     private http: HttpClient,
     private renderer: Renderer2,
-    private cd: ChangeDetectorRef,
-    private sanitizer: DomSanitizer,
   ) {}
   public title = 'wireframe-svg-demo';
   public svgVisible = true;
 
-  public triggerRender$ = new Subject();
+  public triggerRender$ = new ReplaySubject(1);
 
   public continuousRender$ = new BehaviorSubject(false);
 
@@ -237,6 +234,9 @@ export class AppComponent implements AfterViewInit {
         }),
       )
       .subscribe();
+
+    this.triggerRender();
+
   }
 
   public saveSvg(url: SafeUrl) {
