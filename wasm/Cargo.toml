@@ -29,6 +29,10 @@ wee_alloc = { version = "0.4.2", optional = true }
 nalgebra = "0.18"
 approx = "0.3.2"
 
+[dependencies.web-sys]
+version = "0.3"
+features = ["console"]
+
 [dev-dependencies]
 wasm-bindgen-test = "0.2"
 

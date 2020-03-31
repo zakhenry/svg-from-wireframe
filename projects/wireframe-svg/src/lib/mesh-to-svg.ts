@@ -46,11 +46,11 @@ export class MeshToSvg {
     return combineLatest([from(import('wasm-svg-from-wireframe')), input$]).pipe(
       map(([wasm, input]) => {
 
-        debugger;
-
         if (1) {
           // return this.render(input);
         }
+
+        console.time('wasm call');
 
         const wasmSvg = wasm.mesh_to_svg_lines(
           input.width,
@@ -66,6 +66,10 @@ export class MeshToSvg {
           input.meshWorldMatrix,
           input.cameraForwardVector
         );
+
+        console.timeEnd('wasm call');
+
+        // this.render(input);
 
         return wasmSvg;
 

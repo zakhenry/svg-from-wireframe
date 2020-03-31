@@ -1,8 +1,8 @@
+#[macro_use] mod utils;
 mod mesh;
 mod scene;
 mod svg_renderer;
 mod types;
-mod utils;
 
 use mesh::Mesh;
 use wasm_bindgen::prelude::*;
@@ -14,11 +14,14 @@ use wasm_bindgen::prelude::*;
 static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 
 extern crate nalgebra as na;
-use na::{Point2};
+use na::{Point2, Point3};
 
 use crate::svg_renderer::{SvgConfig, SvgLineConfig};
 use types::{ LineSegment, LineVisibility};
 use crate::utils::set_panic_hook;
+
+extern crate web_sys;
+use web_sys::console;
 
 #[macro_use]
 extern crate approx; // For the macro relative_eq!
@@ -53,19 +56,39 @@ pub fn mesh_to_svg_lines(
         camera_forward_vector,
     );
 
-    let segments = mesh
-        .vertices
-        .into_iter()
-        .map(|vertex| {
-            let transformed = scene.project_point(vertex);
+    // scene.project_point(Point3::new(0.0, 0.0, 0.0));
 
-            LineSegment {
-                visibility: LineVisibility::VISIBLE,
-                from: transformed.clone(),
-                to: transformed.clone(),
-            }
+    // let segments = mesh
+    //     .vertices
+    //     .into_iter()
+    //     .map(|vertex| {
+    //         let transformed = scene.project_point(vertex);
+    //         // let transformed = Point2::new(0.0, 0.0);
+    //
+    //         LineSegment {
+    //             visibility: LineVisibility::VISIBLE,
+    //             from: transformed.clone(),
+    //             to: transformed.clone(),
+    //         }
+    //     })
+    //     .collect();
+
+
+    let mut segments: Vec<LineSegment> = vec![];
+
+
+    for (i, vertex) in wireframe.vertices.iter().enumerate().step_by(2) {
+
+        let from = scene.project_point(vertex.to_owned());
+        let to = scene.project_point(wireframe.vertices[i+1].to_owned());
+
+        segments.push(LineSegment {
+            visibility: LineVisibility::VISIBLE,
+            from,
+            to,
         })
-        .collect();
+
+    }
 
     // let segments = vec![
     //     LineSegment {
@@ -88,8 +111,8 @@ pub fn mesh_to_svg_lines(
     svg_renderer::screen_space_lines_to_fitted_svg(
         segments,
         SvgConfig {
-            width: 800,
-            height: 600,
+            width: canvas_width,
+            height: canvas_height,
             margin: 100,
             visible: SvgLineConfig {
                 stroke_width: 4,

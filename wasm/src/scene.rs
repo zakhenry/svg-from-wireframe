@@ -49,13 +49,17 @@ impl Scene {
             0.0, 0.0, 0.0, 1.0,
         );
 
-        let mat = &self.mesh_world_matrix * &self.view_matrix * &self.projection_matrix;
+        let mat = viewport_mat * &self.transformation_matrix * &self.mesh_world_matrix;
+
+        // log!("matrix is {matrix}", matrix=mat);
 
         let transformed = mat.transform_point(&point);
 
+        // log!("transformed is {transformed}", transformed=transformed);
+
         Point2::new(
-            transformed[0],// * self.width as f32,
-            transformed[1],// * self.height as f32,
+            transformed[0] * self.width as f32,
+            transformed[1] * self.height as f32,
         )
     }
 }
