@@ -46,9 +46,12 @@ export class MeshToSvg {
     return combineLatest([from(import('wasm-svg-from-wireframe')), input$]).pipe(
       map(([wasm, input]) => {
 
-        if (1) {
-          // return this.render(input);
-        }
+        // if (1) {
+        //   console.time('js call');
+        //   const jsSvg = this.render(input);
+        //   console.timeEnd('js call');
+        //   return jsSvg;
+        // }
 
         console.time('wasm call');
 

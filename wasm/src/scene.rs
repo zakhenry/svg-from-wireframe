@@ -33,20 +33,14 @@ impl Scene {
 
     fn matrix_from_boxed_float_array(data: Box<[f32]>) -> Matrix4<f32> {
         Matrix4::new(
-            data[0], data[4], data[8], data[12],
-            data[1], data[5], data[9], data[13],
-            data[2], data[6], data[10], data[14],
-            data[3], data[7], data[11], data[15],
+            data[0], data[4], data[8], data[12], data[1], data[5], data[9], data[13], data[2],
+            data[6], data[10], data[14], data[3], data[7], data[11], data[15],
         )
     }
 
     pub fn project_point(&self, point: Point3<f32>) -> Point2<f32> {
-
         let viewport_mat = Matrix4::new(
-            0.5, 0.0, 0.0, 0.5,
-            0.0, -0.5, 0.0, 0.5,
-            0.0, 0.0, 0.5, 0.5,
-            0.0, 0.0, 0.0, 1.0,
+            0.5, 0.0, 0.0, 0.5, 0.0, -0.5, 0.0, 0.5, 0.0, 0.0, 0.5, 0.5, 0.0, 0.0, 0.0, 1.0,
         );
 
         let mat = viewport_mat * &self.transformation_matrix * &self.mesh_world_matrix;

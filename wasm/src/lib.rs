@@ -1,4 +1,5 @@
-#[macro_use] mod utils;
+#[macro_use]
+mod utils;
 mod mesh;
 mod scene;
 mod svg_renderer;
@@ -17,8 +18,8 @@ extern crate nalgebra as na;
 use na::{Point2, Point3};
 
 use crate::svg_renderer::{SvgConfig, SvgLineConfig};
-use types::{ LineSegment, LineVisibility};
 use crate::utils::set_panic_hook;
+use types::{LineSegment, LineVisibility};
 
 extern crate web_sys;
 use web_sys::console;
@@ -30,10 +31,10 @@ extern crate approx; // For the macro relative_eq!
 pub fn mesh_to_svg_lines(
     canvas_width: i32,
     canvas_height: i32,
-    mesh_indices: Box<[i32]>,
+    mesh_indices: Box<[usize]>,
     mesh_vertices: Box<[f32]>,
     mesh_normals: Option<Box<[f32]>>,
-    wireframe_indices: Box<[i32]>,
+    wireframe_indices: Box<[usize]>,
     wireframe_vertices: Box<[f32]>,
     transformation_matrix: Box<[f32]>,
     view_matrix: Box<[f32]>,
@@ -41,7 +42,6 @@ pub fn mesh_to_svg_lines(
     mesh_world_matrix: Box<[f32]>,
     camera_forward_vector: Box<[f32]>,
 ) -> String {
-
     set_panic_hook();
 
     let mesh = Mesh::new(mesh_indices, mesh_vertices, mesh_normals);
@@ -55,6 +55,8 @@ pub fn mesh_to_svg_lines(
         mesh_world_matrix,
         camera_forward_vector,
     );
+
+    log!("adjacency info: {adjacency}", adjacency=mesh.compute_adjacency().len());
 
     // scene.project_point(Point3::new(0.0, 0.0, 0.0));
 
@@ -73,21 +75,17 @@ pub fn mesh_to_svg_lines(
     //     })
     //     .collect();
 
-
     let mut segments: Vec<LineSegment> = vec![];
 
-
-    for (i, vertex) in wireframe.vertices.iter().enumerate().step_by(2) {
-
+    for (i, vertex) in wireframe.points.iter().enumerate().step_by(2) {
         let from = scene.project_point(vertex.to_owned());
-        let to = scene.project_point(wireframe.vertices[i+1].to_owned());
+        let to = scene.project_point(wireframe.points[i + 1].to_owned());
 
         segments.push(LineSegment {
             visibility: LineVisibility::VISIBLE,
             from,
             to,
         })
-
     }
 
     // let segments = vec![

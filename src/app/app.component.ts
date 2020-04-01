@@ -26,7 +26,7 @@ import {
 } from '@babylonjs/core';
 import { fromWorker } from 'observable-webworker';
 import { BehaviorSubject, concat, Observable, of, ReplaySubject, Subject } from 'rxjs';
-import { filter, map, mergeMap, pairwise, switchMap, take, tap } from 'rxjs/operators';
+import { exhaustMap, filter, map, mergeMap, pairwise, switchMap, take, tap } from 'rxjs/operators';
 import { MeshToSvgWorkerPayload } from 'wireframe-svg';
 import { createMeshPair, MeshPairData } from './load-mesh';
 
@@ -52,7 +52,7 @@ export class AppComponent implements AfterViewInit {
   public workerInput$: Subject<MeshToSvgWorkerPayload> = new Subject();
 
   public workerOutput$: Observable<string> = this.workerInput$.pipe(
-    mergeMap(input => {
+    exhaustMap(input => {
       return fromWorker<MeshToSvgWorkerPayload, string>(
         () => new Worker('./mesh-to-svg.worker', { type: 'module' }),
         of(input),

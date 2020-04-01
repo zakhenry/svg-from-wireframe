@@ -46,6 +46,8 @@ export function viewSpaceLinesToScreenSpaceLines(
       return { screenSpace, viewSpace };
     });
 
+  // return {obscured: [], visible: projectedLinesWithDuplicates.map(line => line.screenSpace)};
+
   const projectedLines = dedupeLines(projectedLinesWithDuplicates);
 
   const intersectionsMap: Map<number, Vector2[]> = new Map();
@@ -63,7 +65,7 @@ export function viewSpaceLinesToScreenSpaceLines(
           if (!intersectionsMap.has(p)) {
             intersectionsMap.set(p, []);
           }
-          intersectionsMap.get(p).push(intersection);
+          intersectionsMap.get(p).push(intersection as any);
         });
       }
     }
