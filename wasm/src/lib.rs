@@ -19,7 +19,7 @@ use na::{Point2, Point3};
 
 use crate::svg_renderer::{SvgConfig, SvgLineConfig};
 use crate::utils::set_panic_hook;
-use types::{LineSegment, LineVisibility};
+use types::{LineSegment2, LineVisibility};
 
 extern crate web_sys;
 use web_sys::console;
@@ -56,7 +56,10 @@ pub fn mesh_to_svg_lines(
         camera_forward_vector,
     );
 
-    log!("adjacency info: {adjacency}", adjacency=mesh.compute_adjacency().len());
+    log!(
+        "adjacency info: {adjacency}",
+        adjacency = mesh.compute_adjacency().len()
+    );
 
     // scene.project_point(Point3::new(0.0, 0.0, 0.0));
 
@@ -75,18 +78,33 @@ pub fn mesh_to_svg_lines(
     //     })
     //     .collect();
 
-    let mut segments: Vec<LineSegment> = vec![];
+    let mut segments: Vec<LineSegment2> = vec![];
 
-    for (i, vertex) in wireframe.points.iter().enumerate().step_by(2) {
-        let from = scene.project_point(vertex.to_owned());
-        let to = scene.project_point(wireframe.points[i + 1].to_owned());
+    // show wireframe
+    // for (i, vertex) in wireframe.points.iter().enumerate().step_by(2) {
+    //     let from = scene.project_point(vertex.to_owned());
+    //     let to = scene.project_point(wireframe.points[i + 1].to_owned());
+    //
+    //     segments.push(LineSegment2 {
+    //         visibility: LineVisibility::VISIBLE,
+    //         from,
+    //         to,
+    //     })
+    // }
 
-        segments.push(LineSegment {
+    // show sharp edges
+    for segment in mesh.find_edge_lines(false) {
+        let from = scene.project_point(segment.from);
+        let to = scene.project_point(segment.to);
+
+        segments.push(LineSegment2 {
             visibility: LineVisibility::VISIBLE,
             from,
             to,
         })
     }
+
+    log!("segments: {segments}", segments = segments.len());
 
     // let segments = vec![
     //     LineSegment {

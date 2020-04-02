@@ -1,4 +1,4 @@
-use super::types::{LineSegment, LineVisibility};
+use super::types::{LineSegment2, LineVisibility};
 use na::{Point2, Vector2};
 
 #[derive(Copy, Clone)]
@@ -17,9 +17,9 @@ pub struct SvgConfig {
 }
 
 fn scale_screen_space_lines(
-    screen_space_lines: Vec<LineSegment>,
+    screen_space_lines: Vec<LineSegment2>,
     svg_config: SvgConfig,
-) -> Vec<LineSegment> {
+) -> Vec<LineSegment2> {
     let all_points: Vec<Point2<f32>> = screen_space_lines
         .iter()
         .flat_map(|seg| vec![seg.from, seg.to])
@@ -49,7 +49,7 @@ fn scale_screen_space_lines(
 
     let scaled_points = screen_space_lines
         .iter()
-        .map(|line| LineSegment {
+        .map(|line| LineSegment2 {
             visibility: line.visibility,
             from: ((&line.from - half_viewport) * scale) + half_canvas,
             to: ((&line.to - half_viewport) * scale) + half_canvas,
@@ -60,7 +60,7 @@ fn scale_screen_space_lines(
 }
 
 pub fn screen_space_lines_to_fitted_svg(
-    screen_space_lines: Vec<LineSegment>,
+    screen_space_lines: Vec<LineSegment2>,
     svg_config: SvgConfig,
 ) -> String {
     let fitted_lines = scale_screen_space_lines(screen_space_lines, svg_config);
@@ -70,7 +70,7 @@ pub fn screen_space_lines_to_fitted_svg(
     svg
 }
 
-fn line_segments_to_svg(segments: Vec<LineSegment>, config: SvgConfig) -> String {
+fn line_segments_to_svg(segments: Vec<LineSegment2>, config: SvgConfig) -> String {
     let visible = segments
         .into_iter()
         .filter(|seg| match seg.visibility {
@@ -89,7 +89,7 @@ fn line_segments_to_svg(segments: Vec<LineSegment>, config: SvgConfig) -> String
     )
 }
 
-fn create_path_element(lines: Vec<LineSegment>, line_config: SvgLineConfig) -> String {
+fn create_path_element(lines: Vec<LineSegment2>, line_config: SvgLineConfig) -> String {
     let mut path_def = "".to_string();
     let mut current: Option<Point2<f32>> = None;
 

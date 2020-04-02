@@ -53,6 +53,8 @@ export class MeshToSvg {
         //   return jsSvg;
         // }
 
+        console.log(`mesh`, input.mesh);
+
         console.time('wasm call');
 
         const wasmSvg = wasm.mesh_to_svg_lines(

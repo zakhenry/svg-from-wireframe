@@ -210,12 +210,12 @@ export class AppComponent implements AfterViewInit {
                 const inputRender: MeshToSvgWorkerPayload = {
                   mesh: {
                     positions: mesh.getVerticesData(VertexBuffer.PositionKind, true, true) as Float32Array,
-                    indices: Int32Array.from(mesh.getIndices()),
+                    indices: Uint32Array.from(mesh.getIndices()),
                     normals: mesh.getVerticesData(VertexBuffer.NormalKind, true, true) as Float32Array,
                   },
                   wireframe: {
                     positions: edgesMesh.getVerticesData(VertexBuffer.PositionKind, true, true) as Float32Array,
-                    indices: Int32Array.from(edgesMesh.getIndices()),
+                    indices: Uint32Array.from(edgesMesh.getIndices()),
                   },
                   meshWorldMatrix: mesh.getWorldMatrix().toArray() as Float32Array,
                   sceneTransformMatrix: scene.getTransformMatrix().toArray() as Float32Array,

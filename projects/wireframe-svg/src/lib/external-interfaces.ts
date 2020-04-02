@@ -3,13 +3,13 @@ type Vector3Data = Float32Array;
 
 export interface TriangleMesh {
   positions: Float32Array;
-  indices: Int32Array;
+  indices: Uint32Array;
   normals: Float32Array;
 }
 
 export interface LinesMesh {
   positions: Float32Array;
-  indices: Int32Array;
+  indices: Uint32Array;
 }
 
 export interface SvgLineConfig {
