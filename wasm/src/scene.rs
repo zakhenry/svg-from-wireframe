@@ -56,5 +56,4 @@ impl Scene {
             transformed[1] * self.height as f32,
         )
     }
-
 }

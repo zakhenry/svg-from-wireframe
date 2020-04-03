@@ -46,7 +46,7 @@ export function viewSpaceLinesToScreenSpaceLines(
       return { screenSpace, viewSpace };
     });
 
-  // return {obscured: [], visible: projectedLinesWithDuplicates.map(line => line.screenSpace)};
+  return {obscured: [], visible: projectedLinesWithDuplicates.map(line => line.screenSpace)};
 
   const projectedLines = dedupeLines(projectedLinesWithDuplicates);
 

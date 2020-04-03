@@ -22,7 +22,6 @@ export class MeshToSvg {
 
     const silhouetteCandidates = getSilhouetteCandidates(input.mesh.indices, input.mesh.positions, input.mesh.normals);
     const wireframeLines = input.wireframe ? this.getWireframeLines(input.wireframe.positions) : null;
-return '';
     const screenSpaceLines = viewSpaceLinesToScreenSpaceLines(
       wireframeLines,
       silhouetteCandidates,
@@ -45,7 +44,6 @@ return '';
   public run(input$: Observable<MeshToSvgWorkerPayload>): Observable<string> {
     return combineLatest([from(import('wasm-svg-from-wireframe')), input$]).pipe(
       map(([wasm, input]) => {
-
         // if (1) {
         //   console.time('js call');
         //   const jsSvg = this.render(input);
@@ -69,16 +67,14 @@ return '';
           input.sceneViewMatrix,
           input.sceneProjectionMatrix,
           input.meshWorldMatrix,
-          input.cameraForwardVector
+          input.cameraForwardVector,
         );
 
         console.timeEnd('wasm call');
-
+        console.time('js call');
         this.render(input);
-
+        console.timeEnd('js call');
         return wasmSvg;
-
-
       }),
     );
   }

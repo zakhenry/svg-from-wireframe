@@ -5,7 +5,7 @@ mod scene;
 mod svg_renderer;
 mod types;
 
-use mesh::Mesh;
+use mesh::{Mesh, Wireframe};
 use wasm_bindgen::prelude::*;
 
 // When the `wee_alloc` feature is enabled, use `wee_alloc` as the global
@@ -33,7 +33,7 @@ pub fn mesh_to_svg_lines(
     canvas_height: i32,
     mesh_indices: Box<[usize]>,
     mesh_vertices: Box<[f32]>,
-    mesh_normals: Option<Box<[f32]>>,
+    mesh_normals: Box<[f32]>,
     wireframe_indices: Box<[usize]>,
     wireframe_vertices: Box<[f32]>,
     transformation_matrix: Box<[f32]>,
@@ -45,7 +45,7 @@ pub fn mesh_to_svg_lines(
     set_panic_hook();
 
     let mesh = Mesh::new(mesh_indices, mesh_vertices, mesh_normals);
-    let wireframe = Mesh::new_wireframe(wireframe_indices, wireframe_vertices);
+    let wireframe = Wireframe::new(wireframe_indices, wireframe_vertices);
     let scene = scene::Scene::new(
         canvas_width,
         canvas_height,
