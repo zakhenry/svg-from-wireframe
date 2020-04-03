@@ -63,7 +63,6 @@ export class MeshToSvg {
           input.mesh.normals,
           input.wireframe.indices,
           input.wireframe.positions,
-          input.sceneTransformMatrix,
           input.sceneViewMatrix,
           input.sceneProjectionMatrix,
           input.meshWorldMatrix,

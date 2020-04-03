@@ -37,7 +37,6 @@ pub fn mesh_to_svg_lines(
     mesh_normals: Box<[f32]>,
     wireframe_indices: Box<[usize]>,
     wireframe_vertices: Box<[f32]>,
-    transformation_matrix: Box<[f32]>,
     view_matrix: Box<[f32]>,
     projection_matrix: Box<[f32]>,
     mesh_world_matrix: Box<[f32]>,
@@ -50,7 +49,6 @@ pub fn mesh_to_svg_lines(
     let scene = scene::Scene::new(
         canvas_width,
         canvas_height,
-        transformation_matrix,
         view_matrix,
         projection_matrix,
         mesh_world_matrix,
@@ -61,6 +59,15 @@ pub fn mesh_to_svg_lines(
         "adjacency info: {adjacency}",
         adjacency = mesh.compute_adjacency().len()
     );
+
+
+    let point = Point2::new(10.0, 10.0);
+
+    let unprojected = scene.unproject_point(point);
+
+    let reprojected = scene.project_point(unprojected);
+
+    log!("point: {point}, unprojected: {unprojected}, reprojected: {reprojected}", point=point,unprojected=unprojected,reprojected=reprojected);
 
     // scene.project_point(Point3::new(0.0, 0.0, 0.0));
 

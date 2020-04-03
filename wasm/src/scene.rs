@@ -1,10 +1,9 @@
-use na::{Matrix4, Point2, Point3, Vector3};
+use na::{Matrix4, Point2, Point3, Vector3, inverse};
 use crate::lines::{LineSegment2, LineSegment3, ProjectedLine, dedupe_lines};
 
 pub struct Scene {
     pub width: i32,
     pub height: i32,
-    pub transformation_matrix: Matrix4<f32>,
     pub view_matrix: Matrix4<f32>,
     pub projection_matrix: Matrix4<f32>,
     pub mesh_world_matrix: Matrix4<f32>,
@@ -15,7 +14,6 @@ impl Scene {
     pub fn new(
         width: i32,
         height: i32,
-        transform: Box<[f32]>,
         view: Box<[f32]>,
         projection: Box<[f32]>,
         mesh_world: Box<[f32]>,
@@ -24,7 +22,6 @@ impl Scene {
         Scene {
             width,
             height,
-            transformation_matrix: Scene::matrix_from_boxed_float_array(transform),
             view_matrix: Scene::matrix_from_boxed_float_array(view),
             projection_matrix: Scene::matrix_from_boxed_float_array(projection),
             mesh_world_matrix: Scene::matrix_from_boxed_float_array(mesh_world),
@@ -39,13 +36,20 @@ impl Scene {
         )
     }
 
-    pub fn project_point(&self, point: Point3<f32>) -> Point2<f32> {
+    fn get_projection_matrix(&self) -> Matrix4<f32> {
+
         let viewport_mat = Matrix4::new(
             0.5, 0.0, 0.0, 0.5, 0.0, -0.5, 0.0, 0.5, 0.0, 0.0, 0.5, 0.5, 0.0, 0.0, 0.0, 1.0,
         );
 
-        let mat = viewport_mat * &self.transformation_matrix * &self.mesh_world_matrix;
+        let mat = viewport_mat * &self.projection_matrix * &self.view_matrix * &self.mesh_world_matrix;
 
+        mat
+    }
+
+    pub fn project_point(&self, point: Point3<f32>) -> Point2<f32> {
+
+        let mat = self.get_projection_matrix();
         // log!("matrix is {matrix}", matrix=mat);
 
         let transformed = mat.transform_point(&point);
@@ -56,6 +60,14 @@ impl Scene {
             transformed[0] * self.width as f32,
             transformed[1] * self.height as f32,
         )
+    }
+
+    pub fn unproject_point(&self, point: Point2<f32>) -> Point3<f32> {
+
+        let mat = self.get_projection_matrix();
+        let projection_point = Point3::new(point[0], point[1], 0.0);
+
+        mat.try_inverse().unwrap().transform_point(&projection_point)
     }
 
     pub fn project_line(&self, line: &LineSegment3) -> LineSegment2 {
