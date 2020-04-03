@@ -1,4 +1,4 @@
-use crate::types::{LineSegment2, LineSegmentCulled, LineVisibility};
+use crate::lines::{LineSegment2, LineSegmentCulled, LineVisibility};
 use na::{Point2, Vector2};
 
 #[derive(Copy, Clone)]

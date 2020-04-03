@@ -1,6 +1,6 @@
 extern crate nalgebra as na;
 use crate::scene::Scene;
-use crate::types::{EdgeCandidate, LineSegment2, LineSegment3};
+use crate::lines::{EdgeCandidate, LineSegment2, LineSegment3, ProjectedLine};
 use na::{Point3, Vector3};
 
 pub struct Mesh {
@@ -39,6 +39,23 @@ impl Wireframe {
             vertices: vertices_data.into_vec(),
             points,
         }
+    }
+
+    pub fn edges(&self) -> Vec<LineSegment3> {
+
+        let mut segments = Vec::with_capacity((&self.points.len() / 2));
+
+        for (i, vertex) in self.points.iter().enumerate().step_by(2) {
+            let from = vertex.to_owned();
+            let to = self.points[i + 1].to_owned();
+
+            segments.push(LineSegment3 {
+                from,
+                to,
+            })
+        }
+
+        segments
     }
 }
 

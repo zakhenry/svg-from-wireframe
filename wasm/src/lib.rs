@@ -3,7 +3,7 @@ mod utils;
 mod mesh;
 mod scene;
 mod svg_renderer;
-mod types;
+mod lines;
 
 use mesh::{Mesh, Wireframe};
 use wasm_bindgen::prelude::*;
@@ -19,10 +19,11 @@ use na::{Point2, Point3};
 
 use crate::svg_renderer::{SvgConfig, SvgLineConfig};
 use crate::utils::set_panic_hook;
-use types::{LineSegment2, LineSegmentCulled, LineVisibility};
+use lines::{LineSegment2, LineSegmentCulled, LineVisibility};
 
 extern crate web_sys;
 use web_sys::console;
+use crate::lines::dedupe_lines;
 
 #[macro_use]
 extern crate approx; // For the macro relative_eq!
@@ -78,30 +79,44 @@ pub fn mesh_to_svg_lines(
     //     })
     //     .collect();
 
-    let mut segments: Vec<LineSegmentCulled> = vec![];
-
-    // show wireframe
-    // for (i, vertex) in wireframe.points.iter().enumerate().step_by(2) {
-    //     let from = scene.project_point(vertex.to_owned());
-    //     let to = scene.project_point(wireframe.points[i + 1].to_owned());
+    // let mut segments: Vec<LineSegmentCulled> = vec![];
     //
-    //     segments.push(LineSegment2 {
+    // // show wireframe
+    // // for (i, vertex) in wireframe.points.iter().enumerate().step_by(2) {
+    // //     let from = scene.project_point(vertex.to_owned());
+    // //     let to = scene.project_point(wireframe.points[i + 1].to_owned());
+    // //
+    // //     segments.push(LineSegment2 {
+    // //         visibility: LineVisibility::VISIBLE,
+    // //         from,
+    // //         to,
+    // //     })
+    // // }
+    //
+    // // show sharp edges
+    // for segment in mesh.find_edge_lines(&scene, false) {
+    //     let from = scene.project_point(segment.from);
+    //     let to = scene.project_point(segment.to);
+    //
+    //     segments.push(LineSegmentCulled {
     //         visibility: LineVisibility::VISIBLE,
-    //         from,
-    //         to,
+    //         line_segment: LineSegment2 { from, to },
     //     })
     // }
 
-    // show sharp edges
-    for segment in mesh.find_edge_lines(&scene, false) {
-        let from = scene.project_point(segment.from);
-        let to = scene.project_point(segment.to);
 
-        segments.push(LineSegmentCulled {
+    let mut edges = mesh.find_edge_lines(&scene, false);
+    edges.append(&mut wireframe.edges());
+
+
+    let segments: Vec<LineSegmentCulled> = scene.project_lines(&edges).iter().map(|projected_line| {
+
+        LineSegmentCulled {
             visibility: LineVisibility::VISIBLE,
-            line_segment: LineSegment2 { from, to },
-        })
-    }
+            line_segment: projected_line.screen_space,
+        }
+
+    }).collect();
 
     log!("segments: {segments}", segments = segments.len());
 

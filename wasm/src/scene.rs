@@ -1,4 +1,5 @@
 use na::{Matrix4, Point2, Point3, Vector3};
+use crate::lines::{LineSegment2, LineSegment3, ProjectedLine, dedupe_lines};
 
 pub struct Scene {
     pub width: i32,
@@ -56,4 +57,30 @@ impl Scene {
             transformed[1] * self.height as f32,
         )
     }
+
+    pub fn project_line(&self, line: &LineSegment3) -> LineSegment2 {
+        LineSegment2 {
+            from: self.project_point(line.to),
+            to: self.project_point(line.from)
+        }
+    }
+
+    pub fn project_lines(&self, lines: &[LineSegment3]) -> Vec<ProjectedLine> {
+        // let mut projected_lines = Vec::with_capacity(lines.len());
+
+        let projected_lines: Vec<ProjectedLine> = lines.into_iter().map(|line| {
+
+            let screen_space = self.project_line(line);
+
+            ProjectedLine {
+                screen_space,
+                view_space: *line
+            }
+
+        }).collect();
+
+        dedupe_lines(projected_lines)
+    }
+
 }
+

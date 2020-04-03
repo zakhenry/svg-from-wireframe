@@ -18,6 +18,7 @@ pub struct LineSegmentCulled {
     pub visibility: LineVisibility,
 }
 
+#[derive(Copy, Clone)]
 pub struct LineSegment3 {
     pub from: Point3<f32>,
     pub to: Point3<f32>,
@@ -27,6 +28,12 @@ pub struct EdgeCandidate {
     pub edge: LineSegment3,
     pub adjacent_triangle_a_normal: Vector3<f32>,
     pub adjacent_triangle_b_normal: Vector3<f32>,
+}
+
+#[derive(Copy, Clone)]
+pub struct ProjectedLine {
+    pub screen_space: LineSegment2,
+    pub view_space: LineSegment3,
 }
 
 pub fn find_intersection(a: &LineSegment2, b: &LineSegment2) -> Option<Point2<f32>> {
@@ -69,19 +76,22 @@ pub fn find_intersection(a: &LineSegment2, b: &LineSegment2) -> Option<Point2<f3
 }
 
 /// @todo work out how to make this not take Copy of line segments
-pub fn dedupe_lines(lines: Vec<LineSegment2>) -> Vec<LineSegment2> {
-    let deduped = lines
+pub fn dedupe_lines(lines: Vec<ProjectedLine>) -> Vec<ProjectedLine> {
+
+    log!("Line count before deduping: {count}", count = lines.len());
+
+    let deduped: Vec<ProjectedLine> = lines
         .iter()
         .enumerate()
         .filter_map(|(index, line)| {
             for i in (index + 1)..lines.len() {
                 let compare = &lines[i];
 
-                if relative_eq!(line.to, compare.to) && relative_eq!(line.from, compare.from) {
+                if relative_eq!(line.screen_space.to, compare.screen_space.to) && relative_eq!(line.screen_space.from, compare.screen_space.from) {
                     return None;
                 }
 
-                if relative_eq!(line.to, compare.from) && relative_eq!(line.from, compare.to) {
+                if relative_eq!(line.screen_space.to, compare.screen_space.from) && relative_eq!(line.screen_space.from, compare.screen_space.to) {
                     return None;
                 }
             }
@@ -89,5 +99,8 @@ pub fn dedupe_lines(lines: Vec<LineSegment2>) -> Vec<LineSegment2> {
             Some(line.to_owned())
         })
         .collect();
+
+    log!("Line count after deduping: {count}", count = deduped.len());
+
     deduped
 }
