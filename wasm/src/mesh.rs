@@ -1,6 +1,7 @@
 extern crate nalgebra as na;
 use crate::types::{EdgeCandidate, LineSegment2, LineSegment3};
 use na::{Point3, Vector3};
+use crate::scene::Scene;
 
 pub struct Mesh {
     pub indices: Vec<usize>,
@@ -10,8 +11,8 @@ pub struct Mesh {
 }
 
 struct Facet {
-    normal: Vector3<f32>,
-    points: Vec<Point3<f32>>,
+    pub normal: Vector3<f32>,
+    pub points: Vec<Point3<f32>>,
 }
 
 impl Mesh {
@@ -25,11 +26,11 @@ impl Mesh {
             Some(normals_data) => {
                 let mut normals = Vec::new();
 
-                for i in (0..indices_data.len()).step_by(3) {
+                for i in (0..normals_data.len()).step_by(3) {
                     normals.push(Vector3::new(
-                        normals_data[indices_data[i] as usize],
-                        normals_data[indices_data[i + 1] as usize],
-                        normals_data[indices_data[i + 2] as usize],
+                        normals_data[i],
+                        normals_data[i+1],
+                        normals_data[i+2],
                     ))
                 }
 
@@ -76,10 +77,21 @@ impl Mesh {
             data[i] = match find_match(&self.indices, i, |a, b| a == b) {
                 Some(x) => Some(x),
                 None => find_match(&self.indices, i, |a, b| {
-                    indices_equals_with_epsilon(&self.indices, &self.vertices, a, b, epsilon)
+                    // indices_equals_with_epsilon(&self.vertices, a, b, epsilon)
+
+                    relative_eq!(&self.points[a], &self.points[b])
+
                 }),
-            }
+            };
+
         }
+
+        // for matched in &data {
+        //     match matched {
+        //         Some(x) => log!("found match {m}", m=x),
+        //         None => log!("no match :("),
+        //     }
+        // }
 
         data
     }
@@ -89,6 +101,8 @@ impl Mesh {
 
         let normals = self.normals.as_ref().unwrap();
 
+        log!("normals {normals}", normals=normals.len());
+
         for i in (0..self.indices.len() / 3) {
             // log!(
             //     "i is {i}, indices len is {len}, normals len is {normals}",
@@ -97,9 +111,15 @@ impl Mesh {
             //     normals = normals.len()
             // );
 
-            let point_a = self.indices[i];
-            let point_b = self.indices[i + 1];
-            let point_c = self.indices[i + 2];
+            let point_a = self.indices[i*3];
+            let point_b = self.indices[i*3 + 1];
+            let point_c = self.indices[i*3 + 2];
+
+            //
+            // if point_a > normals.len() || point_b > normals.len() || point_c > normals.len() {
+            //     log!("a,b,c: {a},{b},{c}", a=point_a, b=point_b, c=point_c);
+            //     panic!("here");
+            // }
 
             let average_normal = (&normals[point_a] + &normals[point_b] + &normals[point_c]) / 3.0;
 
@@ -113,13 +133,32 @@ impl Mesh {
             });
         }
 
+        // panic!("completed");
+
         facets
     }
 
     pub fn get_silhouette_candidates(&self) -> Vec<EdgeCandidate> {
-        let mut edge_candidates: Vec<EdgeCandidate> = vec![];
         let adjacency = &self.compute_adjacency();
+        let mut edge_candidates: Vec<EdgeCandidate> = vec![];
+
+        // log!("adjacency count: {count}", count=adjacency.len());
+        // log!("adjacency 0: {adjacency}", adjacency=adjacency[0].expect("adjacency[0] should be some!"));
+        // log!("adjacency 10: {adjacency}", adjacency=adjacency[10].unwrap());
+        // log!("adjacency 50: {adjacency}", adjacency=adjacency[50].unwrap());
+        // log!("adjacency 100: {adjacency}", adjacency=adjacency[100].unwrap());
+
+
         let facets = &self.get_facets();
+
+        log!("facet 0, point 0: {p}", p=facets[0].points[0]);
+        log!("facet 0, point 1: {p}", p=facets[0].points[1]);
+        log!("facet 0, point 2: {p}", p=facets[0].points[2]);
+
+        log!("facet 1, point 0: {p}", p=facets[1].points[0]);
+        log!("facet 1, point 1: {p}", p=facets[1].points[1]);
+        log!("facet 1, point 2: {p}", p=facets[1].points[2]);
+        // log!("facet 100, point 1: {p}", p=facets[100].points[1]);
 
         for i in (0..adjacency.len()) {
             match adjacency[i] {
@@ -156,27 +195,40 @@ impl Mesh {
             }
         }
 
+        log!("edge_candidates count {edge_candidates}", edge_candidates=edge_candidates.len());
+
         edge_candidates
     }
 
-    pub fn find_edge_lines(&self, silhouettes_only: bool) -> Vec<LineSegment3> {
+    pub fn transform_normal(self, normal: Vector3<f32>, scene: Scene) -> Vector3<f32> {
+        scene.mesh_world_matrix.transform_vector(&normal)
+    }
+
+    pub fn find_edge_lines(&self, scene: &Scene, silhouettes_only: bool) -> Vec<LineSegment3> {
         self.get_silhouette_candidates()
             .into_iter()
             .filter(|candidate| {
+
                 if !silhouettes_only {
                     let normal_dot_product = candidate
                         .adjacent_triangle_a_normal
-                        .dot(&candidate.adjacent_triangle_a_normal);
+                        .dot(&candidate.adjacent_triangle_b_normal);
+
+                    // log!("dot prod {dp}", dp=normal_dot_product);
 
                     // angle between faces is greater than arbitrarily chosen value, the edge should be rendered as it is a "sharp" corner
-                    if normal_dot_product < 0.95 {
+                    if normal_dot_product < 0.8 {
                         return true;
                     }
                 }
 
-                // @todo add edge finding
+                let normal_a_world = scene.mesh_world_matrix.transform_vector(&candidate.adjacent_triangle_a_normal);
+                let normal_b_world = scene.mesh_world_matrix.transform_vector(&candidate.adjacent_triangle_b_normal);
 
-                false
+                let a_facing = scene.camera_forward_vector.dot(&normal_a_world) > 0.0;
+                let b_facing = scene.camera_forward_vector.dot(&normal_b_world) > 0.0;
+
+                a_facing != b_facing
             })
             .map(|candidate| candidate.edge)
             .collect()
@@ -201,12 +253,14 @@ where
                 _ => j - 1,
             };
 
-            if (indices[i_next] == indices[j_prev]) {
+            if equality_tester(indices[i_next],indices[j_prev]) {
                 matched_index = ((j - (j % 3)) / 3) as i32;
                 break;
             }
         }
     }
+
+    // log!("matched {matched_index}", matched_index=matched_index);
 
     match matched_index {
         -1 => None,
@@ -215,7 +269,6 @@ where
 }
 
 fn indices_equals_with_epsilon(
-    indices: &Vec<usize>,
     vertices: &Vec<f32>,
     index_a: usize,
     index_b: usize,
@@ -224,7 +277,7 @@ fn indices_equals_with_epsilon(
     let mut result = true;
 
     for k in 0..3 {
-        let diff = vertices[indices[index_a] * 3 + k] - vertices[indices[index_b] as usize * 3 + k];
+        let diff = vertices[index_a * 3 + k] - vertices[index_b * 3 + k];
 
         if (diff.abs() > epsilon) {
             result = false;

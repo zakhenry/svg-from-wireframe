@@ -22,7 +22,7 @@ export class MeshToSvg {
 
     const silhouetteCandidates = getSilhouetteCandidates(input.mesh.indices, input.mesh.positions, input.mesh.normals);
     const wireframeLines = input.wireframe ? this.getWireframeLines(input.wireframe.positions) : null;
-
+return '';
     const screenSpaceLines = viewSpaceLinesToScreenSpaceLines(
       wireframeLines,
       silhouetteCandidates,
@@ -74,7 +74,7 @@ export class MeshToSvg {
 
         console.timeEnd('wasm call');
 
-        // this.render(input);
+        this.render(input);
 
         return wasmSvg;
 

@@ -93,7 +93,7 @@ pub fn mesh_to_svg_lines(
     // }
 
     // show sharp edges
-    for segment in mesh.find_edge_lines(false) {
+    for segment in mesh.find_edge_lines(&scene, false) {
         let from = scene.project_point(segment.from);
         let to = scene.project_point(segment.to);
 
