@@ -1,4 +1,4 @@
-use super::types::{LineSegment2, LineVisibility};
+use crate::types::{LineSegment2, LineSegmentCulled, LineVisibility};
 use na::{Point2, Vector2};
 
 #[derive(Copy, Clone)]
@@ -17,12 +17,12 @@ pub struct SvgConfig {
 }
 
 fn scale_screen_space_lines(
-    screen_space_lines: Vec<LineSegment2>,
+    screen_space_lines: Vec<LineSegmentCulled>,
     svg_config: SvgConfig,
-) -> Vec<LineSegment2> {
+) -> Vec<LineSegmentCulled> {
     let all_points: Vec<Point2<f32>> = screen_space_lines
         .iter()
-        .flat_map(|seg| vec![seg.from, seg.to])
+        .flat_map(|seg| vec![seg.line_segment.from, seg.line_segment.to])
         .collect();
 
     let all_x_values: Vec<f32> = all_points.iter().map(|p| p[0]).collect();
@@ -49,10 +49,12 @@ fn scale_screen_space_lines(
 
     let scaled_points = screen_space_lines
         .iter()
-        .map(|line| LineSegment2 {
+        .map(|line| LineSegmentCulled {
             visibility: line.visibility,
-            from: ((&line.from - half_viewport) * scale) + half_canvas,
-            to: ((&line.to - half_viewport) * scale) + half_canvas,
+            line_segment: LineSegment2 {
+                from: ((&line.line_segment.from - half_viewport) * scale) + half_canvas,
+                to: ((&line.line_segment.to - half_viewport) * scale) + half_canvas,
+            },
         })
         .collect();
 
@@ -60,7 +62,7 @@ fn scale_screen_space_lines(
 }
 
 pub fn screen_space_lines_to_fitted_svg(
-    screen_space_lines: Vec<LineSegment2>,
+    screen_space_lines: Vec<LineSegmentCulled>,
     svg_config: SvgConfig,
 ) -> String {
     let fitted_lines = scale_screen_space_lines(screen_space_lines, svg_config);
@@ -70,7 +72,7 @@ pub fn screen_space_lines_to_fitted_svg(
     svg
 }
 
-fn line_segments_to_svg(segments: Vec<LineSegment2>, config: SvgConfig) -> String {
+fn line_segments_to_svg(segments: Vec<LineSegmentCulled>, config: SvgConfig) -> String {
     let visible = segments
         .into_iter()
         .filter(|seg| match seg.visibility {
@@ -89,13 +91,13 @@ fn line_segments_to_svg(segments: Vec<LineSegment2>, config: SvgConfig) -> Strin
     )
 }
 
-fn create_path_element(lines: Vec<LineSegment2>, line_config: SvgLineConfig) -> String {
+fn create_path_element(lines: Vec<LineSegmentCulled>, line_config: SvgLineConfig) -> String {
     let mut path_def = "".to_string();
     let mut current: Option<Point2<f32>> = None;
 
     for (_i, line) in lines.iter().enumerate() {
-        let start = &line.from;
-        let end = &line.to;
+        let start = &line.line_segment.from;
+        let end = &line.line_segment.to;
 
         match current {
             Some(current) if relative_eq!(current, start) => {

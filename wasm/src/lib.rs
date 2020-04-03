@@ -19,7 +19,7 @@ use na::{Point2, Point3};
 
 use crate::svg_renderer::{SvgConfig, SvgLineConfig};
 use crate::utils::set_panic_hook;
-use types::{LineSegment2, LineVisibility};
+use types::{LineSegment2, LineSegmentCulled, LineVisibility};
 
 extern crate web_sys;
 use web_sys::console;
@@ -78,7 +78,7 @@ pub fn mesh_to_svg_lines(
     //     })
     //     .collect();
 
-    let mut segments: Vec<LineSegment2> = vec![];
+    let mut segments: Vec<LineSegmentCulled> = vec![];
 
     // show wireframe
     // for (i, vertex) in wireframe.points.iter().enumerate().step_by(2) {
@@ -97,10 +97,9 @@ pub fn mesh_to_svg_lines(
         let from = scene.project_point(segment.from);
         let to = scene.project_point(segment.to);
 
-        segments.push(LineSegment2 {
+        segments.push(LineSegmentCulled {
             visibility: LineVisibility::VISIBLE,
-            from,
-            to,
+            line_segment: LineSegment2 { from, to },
         })
     }
 
