@@ -17,6 +17,7 @@ static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 extern crate nalgebra as na;
 use na::{Point2, Point3};
 
+use crate::lines::split_lines_by_intersection;
 use crate::svg_renderer::{SvgConfig, SvgLineConfig};
 use crate::utils::set_panic_hook;
 use lines::{LineSegmentCulled, LineVisibility};
@@ -126,12 +127,28 @@ pub fn mesh_to_svg_lines(
     let mut edges = mesh.find_edge_lines(&scene, false);
     edges.append(&mut wireframe.edges());
 
-    let segments: Vec<LineSegmentCulled> = scene
-        .project_lines(&edges)
+    let projected = scene.project_lines(&edges);
+
+    let split_lines = split_lines_by_intersection(projected);
+
+    let segments: Vec<LineSegmentCulled> = split_lines
         .iter()
-        .map(|projected_line| LineSegmentCulled {
-            visibility: LineVisibility::VISIBLE,
-            line_segment: projected_line.screen_space,
+        .flat_map(|projected_line| {
+            log!(
+                "sub segment count: {segments}",
+                segments = projected_line.split_screen_space_lines.len()
+            );
+
+            let culled: Vec<LineSegmentCulled> = projected_line
+                .split_screen_space_lines
+                .iter()
+                .map(|line_segment| LineSegmentCulled {
+                    visibility: LineVisibility::VISIBLE,
+                    line_segment: line_segment.to_owned(),
+                })
+                .collect();
+
+            culled
         })
         .collect();
 

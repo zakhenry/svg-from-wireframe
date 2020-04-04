@@ -1,5 +1,8 @@
 extern crate nalgebra as na;
+
 use na::{Point2, Point3, Vector3};
+use nalgebra::{distance_squared, Point};
+use wasm_bindgen::__rt::core::cmp::Ordering;
 
 #[derive(Copy, Clone)]
 pub enum LineVisibility {
@@ -34,6 +37,11 @@ pub struct EdgeCandidate {
 pub struct ProjectedLine {
     pub screen_space: LineSegment2,
     pub view_space: LineSegment3,
+}
+
+pub struct ProjectedSplitLine {
+    pub projected_line: ProjectedLine,
+    pub split_screen_space_lines: Vec<LineSegment2>,
 }
 
 pub fn find_intersection(a: &LineSegment2, b: &LineSegment2) -> Option<Point2<f32>> {
@@ -106,4 +114,100 @@ pub fn dedupe_lines(lines: Vec<ProjectedLine>) -> Vec<ProjectedLine> {
     log!("Line count after deduping: {count}", count = deduped.len());
 
     deduped
+}
+
+#[derive(Copy, Clone)]
+enum IntersectionVisited {
+    Untested,
+    NoIntersection,
+    FoundIntersection(Point2<f32>),
+}
+
+// @todo there is an annoying amount of cloning going on in here
+pub fn split_lines_by_intersection(lines: Vec<ProjectedLine>) -> Vec<ProjectedSplitLine> {
+    let mut found_intersections: Vec<IntersectionVisited> =
+        vec![IntersectionVisited::Untested; lines.len()];
+
+    lines
+        .iter()
+        .enumerate()
+        .map(|(i, projected_line)| {
+            let line = projected_line.screen_space;
+
+            let mut split_points = Vec::with_capacity(10);
+
+            for (j, line_compare) in lines.iter().enumerate() {
+                if i == j {
+                    continue;
+                }
+
+                let intersection = match &found_intersections[i] {
+                    IntersectionVisited::Untested => {
+                        let test_intersection =
+                            find_intersection(&line, &line_compare.screen_space);
+
+
+                        found_intersections[j] = match test_intersection {
+                            None => IntersectionVisited::NoIntersection,
+                            Some(p) => IntersectionVisited::FoundIntersection(p),
+                        };
+
+                        test_intersection.clone()
+                    }
+                    IntersectionVisited::NoIntersection => None,
+                    IntersectionVisited::FoundIntersection(p) => Some(p.clone()),
+                };
+
+                if let Some(found) = intersection {
+                    log!("intersection found: {}", found);
+                    split_points.push(found);
+                }
+            }
+
+            let split_screen_space_lines = match split_points.len() {
+                0 => vec![projected_line.screen_space.clone()],
+                1 => vec![
+                    LineSegment2 {
+                        from: projected_line.screen_space.from.clone(),
+                        to: split_points[0].clone(),
+                    },
+                    LineSegment2 {
+                        from: split_points[0].clone(),
+                        to: projected_line.screen_space.to.clone(),
+                    },
+                ],
+                n => {
+
+                    split_points.sort_unstable_by(|a, b| {
+                        match distance_squared(a, &line.from) < distance_squared(b, &line.from) {
+                            true => Ordering::Less,
+                            false => Ordering::Greater,
+                        }
+                    });
+
+                    let mut split_lines = split_points
+                        .iter()
+                        .enumerate()
+                        .map(|(i, point)| {
+                            let (from, to) = match i {
+                                0 => (line.from.clone(), point.clone()),
+                                _ => (split_points[i - 1].clone(), point.clone()),
+                            };
+
+                            LineSegment2 { from, to }
+                        })
+                        .collect::<Vec<LineSegment2>>();
+
+                    split_lines.push(LineSegment2 { from: split_lines.last().unwrap().to.clone(), to: line.to.clone() });
+
+                    split_lines
+                }
+            };
+
+            ProjectedSplitLine {
+                projected_line: projected_line.clone(),
+                split_screen_space_lines,
+            }
+        })
+        .collect::<Vec<ProjectedSplitLine>>()
 }
