@@ -77,7 +77,6 @@ pub fn find_intersection(a: &LineSegment2, b: &LineSegment2) -> Option<Point2<f3
 
 /// @todo work out how to make this not take Copy of line segments
 pub fn dedupe_lines(lines: Vec<ProjectedLine>) -> Vec<ProjectedLine> {
-
     log!("Line count before deduping: {count}", count = lines.len());
 
     let deduped: Vec<ProjectedLine> = lines
@@ -87,11 +86,15 @@ pub fn dedupe_lines(lines: Vec<ProjectedLine>) -> Vec<ProjectedLine> {
             for i in (index + 1)..lines.len() {
                 let compare = &lines[i];
 
-                if relative_eq!(line.screen_space.to, compare.screen_space.to) && relative_eq!(line.screen_space.from, compare.screen_space.from) {
+                if relative_eq!(line.screen_space.to, compare.screen_space.to)
+                    && relative_eq!(line.screen_space.from, compare.screen_space.from)
+                {
                     return None;
                 }
 
-                if relative_eq!(line.screen_space.to, compare.screen_space.from) && relative_eq!(line.screen_space.from, compare.screen_space.to) {
+                if relative_eq!(line.screen_space.to, compare.screen_space.from)
+                    && relative_eq!(line.screen_space.from, compare.screen_space.to)
+                {
                     return None;
                 }
             }

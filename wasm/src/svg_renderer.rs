@@ -14,6 +14,7 @@ pub struct SvgConfig {
     pub margin: i32,
     pub visible: SvgLineConfig,
     pub obscured: Option<SvgLineConfig>,
+    pub fit_lines: bool,
 }
 
 fn scale_screen_space_lines(
@@ -65,9 +66,12 @@ pub fn screen_space_lines_to_fitted_svg(
     screen_space_lines: Vec<LineSegmentCulled>,
     svg_config: SvgConfig,
 ) -> String {
-    let fitted_lines = scale_screen_space_lines(screen_space_lines, svg_config);
+    let lines = match svg_config.fit_lines {
+        false => screen_space_lines,
+        true => scale_screen_space_lines(screen_space_lines, svg_config),
+    };
 
-    let svg = line_segments_to_svg(fitted_lines, svg_config);
+    let svg = line_segments_to_svg(lines, svg_config);
 
     svg
 }
@@ -113,5 +117,5 @@ fn create_path_element(lines: Vec<LineSegmentCulled>, line_config: SvgLineConfig
         current = Some(end.to_owned());
     }
 
-    format!("<path d=\"{path_def}\" stroke=\"{stroke}\" fill=\"none\" stroke-width=\"{stroke_width}\" stroke-linecap=\"round\" />", path_def=path_def, stroke=line_config.stroke, stroke_width=line_config.stroke_width)
+    format!("<path d=\"{path_def}\" stroke=\"{stroke}\" fill=\"none\" stroke-width=\"{stroke_width}\" stroke-linecap=\"round\" stroke-linejoin=\"round\" />", path_def=path_def, stroke=line_config.stroke, stroke_width=line_config.stroke_width)
 }

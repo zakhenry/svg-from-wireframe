@@ -1,9 +1,9 @@
 #[macro_use]
 mod utils;
+mod lines;
 mod mesh;
 mod scene;
 mod svg_renderer;
-mod lines;
 
 use mesh::{Mesh, Wireframe};
 use wasm_bindgen::prelude::*;
@@ -22,8 +22,8 @@ use crate::utils::set_panic_hook;
 use lines::{LineSegment2, LineSegmentCulled, LineVisibility};
 
 extern crate web_sys;
-use web_sys::console;
 use crate::lines::dedupe_lines;
+use web_sys::console;
 
 #[macro_use]
 extern crate approx; // For the macro relative_eq!
@@ -60,14 +60,28 @@ pub fn mesh_to_svg_lines(
         adjacency = mesh.compute_adjacency().len()
     );
 
-
     let point = Point2::new(10.0, 10.0);
 
-    let unprojected = scene.unproject_point(point);
+    let unprojected = scene.unproject_point(&point);
+    let reprojected = scene.project_point(&unprojected);
 
-    let reprojected = scene.project_point(unprojected);
+    log!(
+        "point: {point}, \nunprojected: {unprojected}, \nreprojected: {reprojected}",
+        point = point,
+        unprojected = unprojected,
+        reprojected = reprojected
+    );
 
-    log!("point: {point}, unprojected: {unprojected}, reprojected: {reprojected}", point=point,unprojected=unprojected,reprojected=reprojected);
+    let point_b = Point3::new(10.0, 10.0, 10.0);
+    let projected_point_b = scene.project_point(&point_b);
+    let unprojected_point_b = scene.unproject_point(&projected_point_b);
+
+    log!(
+        "point_b: {point}, \nprojected_point_b: {unprojected}, \nunprojected_point_b: {reprojected}",
+        point = point_b,
+        unprojected = projected_point_b,
+        reprojected = unprojected_point_b
+    );
 
     // scene.project_point(Point3::new(0.0, 0.0, 0.0));
 
@@ -76,7 +90,7 @@ pub fn mesh_to_svg_lines(
     //     .into_iter()
     //     .map(|vertex| {
     //         let transformed = scene.project_point(vertex);
-    //         // let transformed = Point2::new(0.0, 0.0);
+    ////         let transformed = Point2::new(0.0, 0.0);
     //
     //         LineSegment {
     //             visibility: LineVisibility::VISIBLE,
@@ -111,19 +125,17 @@ pub fn mesh_to_svg_lines(
     //     })
     // }
 
-
     let mut edges = mesh.find_edge_lines(&scene, false);
     edges.append(&mut wireframe.edges());
 
-
-    let segments: Vec<LineSegmentCulled> = scene.project_lines(&edges).iter().map(|projected_line| {
-
-        LineSegmentCulled {
+    let segments: Vec<LineSegmentCulled> = scene
+        .project_lines(&edges)
+        .iter()
+        .map(|projected_line| LineSegmentCulled {
             visibility: LineVisibility::VISIBLE,
             line_segment: projected_line.screen_space,
-        }
-
-    }).collect();
+        })
+        .collect();
 
     log!("segments: {segments}", segments = segments.len());
 
@@ -156,6 +168,7 @@ pub fn mesh_to_svg_lines(
                 stroke: "black",
             },
             obscured: None,
+            fit_lines: true,
         },
     )
 }

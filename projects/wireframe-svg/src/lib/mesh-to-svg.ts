@@ -20,6 +20,13 @@ export class MeshToSvg {
     const width = input.width;
     const height = input.height;
 
+
+    let point = new Vector3(10.0, 10.0, 0);
+    let unprojected = Vector3.Unproject(point,viewport.width, viewport.height, meshWorldMatrix, sceneViewMatrix, sceneProjectionMatrix);
+    let reprojected = Vector3.Project(unprojected, meshWorldMatrix, sceneTransformMatrix, viewport);
+
+    console.log(`point, unprojected, reprojected`, point, unprojected, reprojected);
+
     const silhouetteCandidates = getSilhouetteCandidates(input.mesh.indices, input.mesh.positions, input.mesh.normals);
     const wireframeLines = input.wireframe ? this.getWireframeLines(input.wireframe.positions) : null;
     const screenSpaceLines = viewSpaceLinesToScreenSpaceLines(
@@ -53,7 +60,7 @@ export class MeshToSvg {
 
         console.log(`mesh`, input.mesh);
 
-        console.time('wasm call');
+        console.time('perf: wasm call');
 
         const wasmSvg = wasm.mesh_to_svg_lines(
           input.width,
@@ -69,10 +76,10 @@ export class MeshToSvg {
           input.cameraForwardVector,
         );
 
-        console.timeEnd('wasm call');
-        console.time('js call');
+        console.timeEnd('perf: wasm call');
+        console.time('perf: js call');
         this.render(input);
-        console.timeEnd('js call');
+        console.timeEnd('perf: js call');
         return wasmSvg;
       }),
     );
