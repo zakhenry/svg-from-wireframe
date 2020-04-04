@@ -428,13 +428,11 @@ export class Vector3 {
     result: Vector3,
   ) {
     Vector3.TransformCoordinatesToRef(source, matrix, result);
-    console.log('before scaling', result);
     const m = matrix.m;
     var num = source.x * m[3] + source.y * m[7] + source.z * m[11] + m[15];
     if (Scalar.WithinEpsilon(num, 1.0)) {
       result.scaleInPlace(1.0 / num);
     }
-    console.log('after scaling', num, result);
   }
 
   /**
@@ -520,18 +518,13 @@ export class Vector3 {
     var matrix = MathTmp.Matrix[0];
     world.multiplyToRef(view, matrix);
     matrix.multiplyToRef(projection, matrix);
-    console.log('unproject matrix before invert', (matrix as any)._m);
     matrix.invert();
-
-    console.log(`viewport`, viewportWidth, viewportWidth);
-    console.log('unproject matrix', (matrix as any)._m);
 
     var screenSource = MathTmp.Vector3[0];
     screenSource.x = (sourceX / viewportWidth) * 2 - 1;
     screenSource.y = -((sourceY / viewportHeight) * 2 - 1);
     screenSource.z = 2 * sourceZ - 1.0;
 
-    console.log(`projection point`, screenSource);
     Vector3._UnprojectFromInvertedMatrixToRef(screenSource, matrix, result);
   }
 

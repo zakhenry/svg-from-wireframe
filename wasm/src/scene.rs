@@ -1,5 +1,6 @@
 use crate::lines::{dedupe_lines, LineSegment2, LineSegment3, ProjectedLine};
 use na::{Matrix4, Point2, Point3, Vector3};
+use crate::mesh::{Mesh, Facet};
 
 pub struct Scene {
     pub width: f32,
@@ -86,4 +87,41 @@ impl Scene {
 
         dedupe_lines(projected_lines)
     }
+}
+
+
+
+pub struct Ray<'a> {
+    pub from: Vector3<f32>,
+    pub to: Vector3<f32>,
+    mesh: &'a Mesh,
+    scene: &'a Scene,
+}
+
+impl<'a> Ray<'a> {
+
+    pub fn new(mesh: &'a Mesh, scene: &'a Scene) -> Ray<'a> {
+        Ray {
+            from: Vector3::zeros(),
+            to: Vector3::zeros(),
+            mesh,
+            scene,
+        }
+    }
+
+    pub fn intersects_mesh(&self) -> bool {
+
+        for facet in &self.mesh.facets {
+            if self.intersects_facet(facet) {
+                return true;
+            }
+        }
+
+        false
+    }
+
+    fn intersects_facet(&self, facet: &Facet) -> bool {
+        true
+    }
+
 }

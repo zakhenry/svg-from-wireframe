@@ -18,7 +18,7 @@ pub struct SvgConfig {
 }
 
 fn scale_screen_space_lines(
-    screen_space_lines: Vec<LineSegmentCulled>,
+    screen_space_lines: &[LineSegmentCulled],
     svg_config: SvgConfig,
 ) -> Vec<LineSegmentCulled> {
     let all_points: Vec<Point2<f32>> = screen_space_lines
@@ -63,35 +63,40 @@ fn scale_screen_space_lines(
 }
 
 pub fn screen_space_lines_to_fitted_svg(
-    screen_space_lines: Vec<LineSegmentCulled>,
+    screen_space_lines: &[LineSegmentCulled],
     svg_config: SvgConfig,
 ) -> String {
-    let lines = match svg_config.fit_lines {
-        false => screen_space_lines,
-        true => scale_screen_space_lines(screen_space_lines, svg_config),
+    let svg = match svg_config.fit_lines {
+        false => line_segments_to_svg(screen_space_lines, svg_config),
+        true => {
+            let scaled = scale_screen_space_lines(screen_space_lines, svg_config);
+            line_segments_to_svg(&scaled, svg_config)
+        },
     };
-
-    let svg = line_segments_to_svg(lines, svg_config);
 
     svg
 }
 
-fn line_segments_to_svg(segments: Vec<LineSegmentCulled>, config: SvgConfig) -> String {
-    let visible = segments
-        .into_iter()
-        .filter(|seg| match seg.visibility {
+fn line_segments_to_svg(segments: &[LineSegmentCulled], config: SvgConfig) -> String {
+    let (visible, obscured) = segments
+        .iter()
+        .partition(|&seg| match seg.visibility {
             LineVisibility::VISIBLE => true,
             _ => false,
-        })
-        .collect();
+        });
 
     format!(
         "<svg viewBox=\"0 0 {width} {height}\" xmlns=\"http://www.w3.org/2000/svg\">
 {visible}
+{obscured}
 </svg>",
         width = config.width,
         height = config.height,
-        visible = create_path_element(visible, config.visible)
+        visible = create_path_element(visible, config.visible),
+        obscured = match config.obscured {
+            Some(conf) => create_path_element(obscured, conf),
+            None => "".to_owned(),
+        }
     )
 }
 

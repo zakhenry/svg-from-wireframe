@@ -215,7 +215,7 @@ where
 fn get_facets(indices: &[usize], points: &[Point3<f32>], normals: &[Vector3<f32>]) -> Vec<Facet> {
     let mut facets: Vec<Facet> = Vec::with_capacity(indices.len() / 3);
 
-    log!("normals {normals}", normals = normals.len());
+    // log!("normals {normals}", normals = normals.len());
 
     for i in 0..indices.len() / 3 {
         let point_a = indices[i * 3];

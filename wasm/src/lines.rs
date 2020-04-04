@@ -1,5 +1,7 @@
 extern crate nalgebra as na;
 
+use crate::mesh::Mesh;
+use crate::scene::{Scene, Ray};
 use na::{Point2, Point3, Vector3};
 use nalgebra::{distance_squared, Point};
 use wasm_bindgen::__rt::core::cmp::Ordering;
@@ -16,6 +18,7 @@ pub struct LineSegment2 {
     pub to: Point2<f32>,
 }
 
+#[derive(Copy, Clone)]
 pub struct LineSegmentCulled {
     pub line_segment: LineSegment2,
     pub visibility: LineVisibility,
@@ -85,7 +88,7 @@ pub fn find_intersection(a: &LineSegment2, b: &LineSegment2) -> Option<Point2<f3
 
 /// @todo work out how to make this not take Copy of line segments
 pub fn dedupe_lines(lines: Vec<ProjectedLine>) -> Vec<ProjectedLine> {
-    log!("Line count before deduping: {count}", count = lines.len());
+    // log!("Line count before deduping: {count}", count = lines.len());
 
     let deduped: Vec<ProjectedLine> = lines
         .iter()
@@ -111,7 +114,7 @@ pub fn dedupe_lines(lines: Vec<ProjectedLine>) -> Vec<ProjectedLine> {
         })
         .collect();
 
-    log!("Line count after deduping: {count}", count = deduped.len());
+    // log!("Line count after deduping: {count}", count = deduped.len());
 
     deduped
 }
@@ -146,7 +149,6 @@ pub fn split_lines_by_intersection(lines: Vec<ProjectedLine>) -> Vec<ProjectedSp
                         let test_intersection =
                             find_intersection(&line, &line_compare.screen_space);
 
-
                         found_intersections[j] = match test_intersection {
                             None => IntersectionVisited::NoIntersection,
                             Some(p) => IntersectionVisited::FoundIntersection(p),
@@ -159,7 +161,7 @@ pub fn split_lines_by_intersection(lines: Vec<ProjectedLine>) -> Vec<ProjectedSp
                 };
 
                 if let Some(found) = intersection {
-                    log!("intersection found: {}", found);
+                    // log!("intersection found: {}", found);
                     split_points.push(found);
                 }
             }
@@ -177,7 +179,6 @@ pub fn split_lines_by_intersection(lines: Vec<ProjectedLine>) -> Vec<ProjectedSp
                     },
                 ],
                 n => {
-
                     split_points.sort_unstable_by(|a, b| {
                         match distance_squared(a, &line.from) < distance_squared(b, &line.from) {
                             true => Ordering::Less,
@@ -198,7 +199,10 @@ pub fn split_lines_by_intersection(lines: Vec<ProjectedLine>) -> Vec<ProjectedSp
                         })
                         .collect::<Vec<LineSegment2>>();
 
-                    split_lines.push(LineSegment2 { from: split_lines.last().unwrap().to.clone(), to: line.to.clone() });
+                    split_lines.push(LineSegment2 {
+                        from: split_lines.last().unwrap().to.clone(),
+                        to: line.to.clone(),
+                    });
 
                     split_lines
                 }
@@ -210,4 +214,17 @@ pub fn split_lines_by_intersection(lines: Vec<ProjectedLine>) -> Vec<ProjectedSp
             }
         })
         .collect::<Vec<ProjectedSplitLine>>()
+}
+
+
+pub fn get_visibility(
+    line_segment: &LineSegment2,
+    projected_line: &ProjectedLine,
+    ray: &mut Ray
+) -> LineVisibility {
+
+    match ray.intersects_mesh() {
+        true => LineVisibility::VISIBLE,
+        false => LineVisibility::OBSCURED,
+    }
 }

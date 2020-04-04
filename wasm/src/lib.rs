@@ -17,10 +17,11 @@ static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 extern crate nalgebra as na;
 use na::{Point2, Point3};
 
-use crate::lines::split_lines_by_intersection;
+use crate::lines::{get_visibility, split_lines_by_intersection};
 use crate::svg_renderer::{SvgConfig, SvgLineConfig};
 use crate::utils::set_panic_hook;
 use lines::{LineSegmentCulled, LineVisibility};
+use crate::scene::Ray;
 
 extern crate web_sys;
 
@@ -54,76 +55,6 @@ pub fn mesh_to_svg_lines(
         camera_forward_vector,
     );
 
-    log!(
-        "adjacency info: {adjacency}",
-        adjacency = mesh.compute_adjacency().len()
-    );
-
-    let point = Point2::new(10.0, 10.0);
-
-    let unprojected = scene.unproject_point(&point);
-    let reprojected = scene.project_point(&unprojected);
-
-    log!(
-        "point: {point}, \nunprojected: {unprojected}, \nreprojected: {reprojected}",
-        point = point,
-        unprojected = unprojected,
-        reprojected = reprojected
-    );
-
-    let point_b = Point3::new(10.0, 10.0, 10.0);
-    let projected_point_b = scene.project_point(&point_b);
-    let unprojected_point_b = scene.unproject_point(&projected_point_b);
-
-    log!(
-        "point_b: {point}, \nprojected_point_b: {unprojected}, \nunprojected_point_b: {reprojected}",
-        point = point_b,
-        unprojected = projected_point_b,
-        reprojected = unprojected_point_b
-    );
-
-    // scene.project_point(Point3::new(0.0, 0.0, 0.0));
-
-    // let segments = mesh
-    //     .vertices
-    //     .into_iter()
-    //     .map(|vertex| {
-    //         let transformed = scene.project_point(vertex);
-    ////         let transformed = Point2::new(0.0, 0.0);
-    //
-    //         LineSegment {
-    //             visibility: LineVisibility::VISIBLE,
-    //             from: transformed.clone(),
-    //             to: transformed.clone(),
-    //         }
-    //     })
-    //     .collect();
-
-    // let mut segments: Vec<LineSegmentCulled> = vec![];
-    //
-    // // show wireframe
-    // // for (i, vertex) in wireframe.points.iter().enumerate().step_by(2) {
-    // //     let from = scene.project_point(vertex.to_owned());
-    // //     let to = scene.project_point(wireframe.points[i + 1].to_owned());
-    // //
-    // //     segments.push(LineSegment2 {
-    // //         visibility: LineVisibility::VISIBLE,
-    // //         from,
-    // //         to,
-    // //     })
-    // // }
-    //
-    // // show sharp edges
-    // for segment in mesh.find_edge_lines(&scene, false) {
-    //     let from = scene.project_point(segment.from);
-    //     let to = scene.project_point(segment.to);
-    //
-    //     segments.push(LineSegmentCulled {
-    //         visibility: LineVisibility::VISIBLE,
-    //         line_segment: LineSegment2 { from, to },
-    //     })
-    // }
-
     let mut edges = mesh.find_edge_lines(&scene, false);
     edges.append(&mut wireframe.edges());
 
@@ -131,19 +62,25 @@ pub fn mesh_to_svg_lines(
 
     let split_lines = split_lines_by_intersection(projected);
 
+    let mut ray = Ray::new(&mesh, &scene);
+
     let segments: Vec<LineSegmentCulled> = split_lines
         .iter()
         .flat_map(|projected_line| {
-            log!(
-                "sub segment count: {segments}",
-                segments = projected_line.split_screen_space_lines.len()
-            );
+            // log!(
+            //     "sub segment count: {segments}",
+            //     segments = projected_line.split_screen_space_lines.len()
+            // );
 
             let culled: Vec<LineSegmentCulled> = projected_line
                 .split_screen_space_lines
                 .iter()
                 .map(|line_segment| LineSegmentCulled {
-                    visibility: LineVisibility::VISIBLE,
+                    visibility: get_visibility(
+                        &line_segment,
+                        &projected_line.projected_line,
+                        &mut ray,
+                    ),
                     line_segment: line_segment.to_owned(),
                 })
                 .collect();
@@ -152,28 +89,11 @@ pub fn mesh_to_svg_lines(
         })
         .collect();
 
-    log!("segments: {segments}", segments = segments.len());
+    // log!("segments: {segments}", segments = segments.len());
 
-    // let segments = vec![
-    //     LineSegment {
-    //         visibility: LineVisibility::VISIBLE,
-    //         from: Point2::new(0.0, 0.0),
-    //         to: Point2::new(50.0, 0.0),
-    //     },
-    //     LineSegment {
-    //         visibility: LineVisibility::VISIBLE,
-    //         from: Point2::new(50.0, 0.0),
-    //         to: Point2::new(0.0, 50.0),
-    //     },
-    //     LineSegment {
-    //         visibility: LineVisibility::VISIBLE,
-    //         from: Point2::new(0.0, 50.0),
-    //         to: Point2::new(50.0, 50.0),
-    //     }
-    // ];
 
     svg_renderer::screen_space_lines_to_fitted_svg(
-        segments,
+        &segments,
         SvgConfig {
             width: canvas_width,
             height: canvas_height,
@@ -182,7 +102,10 @@ pub fn mesh_to_svg_lines(
                 stroke_width: 4,
                 stroke: "black",
             },
-            obscured: None,
+            obscured: Some(SvgLineConfig {
+                stroke_width: 2,
+                stroke: "grey",
+            }),
             fit_lines: true,
         },
     )

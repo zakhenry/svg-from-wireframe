@@ -24,8 +24,6 @@ export function getSilhouetteCandidates(
 
   const adjacency = computeAdjacency(indices, vertices);
 
-  console.log(`adjacency 0, 10`, adjacency[0], adjacency[10]);
-
   interface Facet {
     normal: Vector3;
     points: Vector3[];
@@ -39,15 +37,6 @@ export function getSilhouetteCandidates(
       points: [positions[indices[i]], positions[indices[i + 1]], positions[indices[i + 2]]],
     });
   }
-
-  console.log('facet 0, point 0:', facets[0].points[0]);
-  console.log('facet 0, point 1:', facets[0].points[1]);
-  console.log('facet 0, point 2:', facets[0].points[2]);
-
-  console.log('facet 1, point 0:', facets[1].points[0]);
-  console.log('facet 1, point 1:', facets[1].points[1]);
-  console.log('facet 1, point 2:', facets[1].points[2]);
-  // console.log('facet 100, point 1:', facets[0].points[1]);
 
   const edgeCandidates: EdgeCandidate[] = [];
 
