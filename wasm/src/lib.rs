@@ -19,11 +19,9 @@ use na::{Point2, Point3};
 
 use crate::svg_renderer::{SvgConfig, SvgLineConfig};
 use crate::utils::set_panic_hook;
-use lines::{LineSegment2, LineSegmentCulled, LineVisibility};
+use lines::{LineSegmentCulled, LineVisibility};
 
 extern crate web_sys;
-use crate::lines::dedupe_lines;
-use web_sys::console;
 
 #[macro_use]
 extern crate approx; // For the macro relative_eq!

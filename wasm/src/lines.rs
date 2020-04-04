@@ -45,10 +45,10 @@ pub fn find_intersection(a: &LineSegment2, b: &LineSegment2) -> Option<Point2<f3
         return None;
     }
 
-    let p0 = a.from;
-    let p1 = a.to;
-    let p2 = b.from;
-    let p3 = b.to;
+    let p0 = &a.from;
+    let p1 = &a.to;
+    let p2 = &b.from;
+    let p3 = &b.to;
 
     let p0x = p0.x;
     let p0y = p0.y;

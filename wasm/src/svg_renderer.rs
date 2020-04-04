@@ -26,10 +26,10 @@ fn scale_screen_space_lines(
         .flat_map(|seg| vec![seg.line_segment.from, seg.line_segment.to])
         .collect();
 
-    let all_x_values: Vec<f32> = all_points.iter().map(|p| p[0]).collect();
+    let all_x_values: Vec<f32> = all_points.iter().map(|p| p.x).collect();
     let max_x = all_x_values.iter().cloned().fold(std::f32::NAN, f32::max);
     let min_x = all_x_values.iter().cloned().fold(std::f32::NAN, f32::min);
-    let all_y_values: Vec<f32> = all_points.iter().map(|p| p[1]).collect();
+    let all_y_values: Vec<f32> = all_points.iter().map(|p| p.y).collect();
     let max_y = all_y_values.iter().cloned().fold(std::f32::NAN, f32::max);
     let min_y = all_y_values.iter().cloned().fold(std::f32::NAN, f32::min);
 
@@ -108,11 +108,11 @@ fn create_path_element(lines: Vec<LineSegmentCulled>, line_config: SvgLineConfig
                 path_def.push_str("L ");
             }
             _ => {
-                path_def.push_str(format!("M {x} {y} ", x = start[0], y = start[1]).as_str());
+                path_def.push_str(format!("M {x} {y} ", x = start.x, y = start.y).as_str());
             }
         }
 
-        path_def.push_str(format!("{x} {y}", x = end[0], y = end[1]).as_str());
+        path_def.push_str(format!("{x} {y}", x = end.x, y = end.y).as_str());
 
         current = Some(end.to_owned());
     }

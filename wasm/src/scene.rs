@@ -47,8 +47,8 @@ impl Scene {
         let transformed = &self.transformation_matrix.transform_point(&point);
 
         Point2::new(
-            (transformed[0] + 1.0) / 2.0 * self.width,
-            (transformed[1] - 1.0) / 2.0 * -self.height,
+            (transformed.x + 1.0) / 2.0 * self.width,
+            (transformed.y - 1.0) / 2.0 * -self.height,
         )
     }
 
@@ -56,8 +56,8 @@ impl Scene {
         let inverted = &self.transformation_matrix.try_inverse().unwrap();
 
         let projection_point = Point3::new(
-            (point[0] / self.width) * 2.0 - 1.0,
-            -((point[1] / self.height) * 2.0 - 1.0),
+            (point.x / self.width) * 2.0 - 1.0,
+            -((point.y / self.height) * 2.0 - 1.0),
             -1.0,
         );
 
@@ -72,7 +72,6 @@ impl Scene {
     }
 
     pub fn project_lines(&self, lines: &[LineSegment3]) -> Vec<ProjectedLine> {
-
         let projected_lines: Vec<ProjectedLine> = lines
             .into_iter()
             .map(|line| {

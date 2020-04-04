@@ -1,7 +1,9 @@
 extern crate nalgebra as na;
-use crate::lines::{EdgeCandidate, LineSegment2, LineSegment3, ProjectedLine};
-use crate::scene::Scene;
+
 use na::{Point3, Vector3};
+
+use crate::lines::{EdgeCandidate, LineSegment3};
+use crate::scene::Scene;
 
 pub struct Mesh {
     pub indices: Vec<usize>,
@@ -26,7 +28,7 @@ impl Wireframe {
     pub fn new(indices_data: Box<[usize]>, vertices_data: Box<[f32]>) -> Wireframe {
         let mut points = Vec::with_capacity(vertices_data.len() / 3);
 
-        for i in (0..vertices_data.len() / 3) {
+        for i in 0..vertices_data.len() / 3 {
             points.push(Point3::new(
                 vertices_data[i * 3],
                 vertices_data[i * 3 + 1],
@@ -42,7 +44,7 @@ impl Wireframe {
     }
 
     pub fn edges(&self) -> Vec<LineSegment3> {
-        let mut segments = Vec::with_capacity((&self.points.len() / 2));
+        let mut segments = Vec::with_capacity(&self.points.len() / 2);
 
         for (i, vertex) in self.points.iter().enumerate().step_by(2) {
             let from = vertex.to_owned();
@@ -84,28 +86,17 @@ impl Mesh {
     }
 
     pub fn compute_adjacency(&self) -> Vec<Option<usize>> {
-        let epsilon: f32 = 0.001;
-
         let index_count = self.indices.len();
         let mut data: Vec<Option<usize>> = vec![Option::None; index_count];
 
-        for i in (0..index_count) {
+        for i in 0..index_count {
             data[i] = match find_match(&self.indices, i, |a, b| a == b) {
                 Some(x) => Some(x),
                 None => find_match(&self.indices, i, |a, b| {
-                    // indices_equals_with_epsilon(&self.vertices, a, b, epsilon)
-
                     relative_eq!(&self.points[a], &self.points[b])
                 }),
             };
         }
-
-        // for matched in &data {
-        //     match matched {
-        //         Some(x) => log!("found match {m}", m=x),
-        //         None => log!("no match :("),
-        //     }
-        // }
 
         data
     }
@@ -114,24 +105,9 @@ impl Mesh {
         let adjacency = &self.compute_adjacency();
         let mut edge_candidates: Vec<EdgeCandidate> = Vec::with_capacity(adjacency.len());
 
-        // log!("adjacency count: {count}", count=adjacency.len());
-        // log!("adjacency 0: {adjacency}", adjacency=adjacency[0].expect("adjacency[0] should be some!"));
-        // log!("adjacency 10: {adjacency}", adjacency=adjacency[10].unwrap());
-        // log!("adjacency 50: {adjacency}", adjacency=adjacency[50].unwrap());
-        // log!("adjacency 100: {adjacency}", adjacency=adjacency[100].unwrap());
-
         let facets = &self.facets;
 
-        log!("facet 0, point 0: {p}", p = facets[0].points[0]);
-        log!("facet 0, point 1: {p}", p = facets[0].points[1]);
-        log!("facet 0, point 2: {p}", p = facets[0].points[2]);
-
-        log!("facet 1, point 0: {p}", p = facets[1].points[0]);
-        log!("facet 1, point 1: {p}", p = facets[1].points[1]);
-        log!("facet 1, point 2: {p}", p = facets[1].points[2]);
-        // log!("facet 100, point 1: {p}", p=facets[100].points[1]);
-
-        for i in (0..adjacency.len()) {
+        for i in 0..adjacency.len() {
             match adjacency[i] {
                 None => continue,
                 Some(adjacent_triangle_index) => {
@@ -166,11 +142,6 @@ impl Mesh {
             }
         }
 
-        log!(
-            "edge_candidates count {edge_candidates}",
-            edge_candidates = edge_candidates.len()
-        );
-
         edge_candidates
     }
 
@@ -186,8 +157,6 @@ impl Mesh {
                     let normal_dot_product = candidate
                         .adjacent_triangle_a_normal
                         .dot(&candidate.adjacent_triangle_b_normal);
-
-                    // log!("dot prod {dp}", dp=normal_dot_product);
 
                     // angle between faces is greater than arbitrarily chosen value, the edge should be rendered as it is a "sharp" corner
                     if normal_dot_product < 0.8 {
@@ -218,8 +187,8 @@ where
 {
     let mut matched_index = -1;
 
-    for j in (0..indices.len()) {
-        if (i != j && equality_tester(indices[i], indices[j])) {
+    for j in 0..indices.len() {
+        if i != j && equality_tester(indices[i], indices[j]) {
             let i_next = match i % 3 {
                 2 => i - 2,
                 _ => i + 1,
@@ -237,8 +206,6 @@ where
         }
     }
 
-    // log!("matched {matched_index}", matched_index=matched_index);
-
     match matched_index {
         -1 => None,
         _ => Some(matched_index as usize),
@@ -250,23 +217,10 @@ fn get_facets(indices: &[usize], points: &[Point3<f32>], normals: &[Vector3<f32>
 
     log!("normals {normals}", normals = normals.len());
 
-    for i in (0..indices.len() / 3) {
-        // log!(
-        //     "i is {i}, indices len is {len}, normals len is {normals}",
-        //     i = i,
-        //     len = self.indices.len(),
-        //     normals = normals.len()
-        // );
-
+    for i in 0..indices.len() / 3 {
         let point_a = indices[i * 3];
         let point_b = indices[i * 3 + 1];
         let point_c = indices[i * 3 + 2];
-
-        //
-        // if point_a > normals.len() || point_b > normals.len() || point_c > normals.len() {
-        //     log!("a,b,c: {a},{b},{c}", a=point_a, b=point_b, c=point_c);
-        //     panic!("here");
-        // }
 
         let average_normal = (&normals[point_a] + &normals[point_b] + &normals[point_c]) / 3.0;
 
@@ -279,8 +233,6 @@ fn get_facets(indices: &[usize], points: &[Point3<f32>], normals: &[Vector3<f32>
             ],
         });
     }
-
-    // panic!("completed");
 
     facets
 }
