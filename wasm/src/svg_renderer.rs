@@ -87,8 +87,8 @@ fn line_segments_to_svg(segments: &[LineSegmentCulled], config: SvgConfig) -> St
 
     format!(
         "<svg viewBox=\"0 0 {width} {height}\" xmlns=\"http://www.w3.org/2000/svg\">
-{visible}
 {obscured}
+{visible}
 </svg>",
         width = config.width,
         height = config.height,

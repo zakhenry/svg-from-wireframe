@@ -49,7 +49,6 @@ export function viewSpaceLinesToScreenSpaceLines(
 
   const projectedLines = dedupeLines(projectedLinesWithDuplicates);
 
-  return {obscured: [], visible: projectedLinesWithDuplicates.map(line => line.screenSpace)};
   const intersectionsMap: Map<number, Vector2[]> = new Map();
 
   // eep, this is O(N^2)

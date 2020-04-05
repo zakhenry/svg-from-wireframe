@@ -1,5 +1,5 @@
 use crate::lines::{dedupe_lines, LineSegment2, LineSegment3, ProjectedLine};
-use na::{Matrix4, Point2, Point3, Vector3};
+use na::{Matrix4, Point2, Point3, Vector2, Vector3};
 use crate::mesh::{Mesh, Facet};
 
 pub struct Scene {
@@ -80,7 +80,7 @@ impl Scene {
 
                 ProjectedLine {
                     screen_space,
-                    view_space: *line,
+                    view_space: line.to_owned(),
                 }
             })
             .collect();
@@ -92,8 +92,9 @@ impl Scene {
 
 
 pub struct Ray<'a> {
-    pub from: Vector3<f32>,
-    pub to: Vector3<f32>,
+    pub origin: Point3<f32>,
+    pub direction: Vector3<f32>,
+    pub length: f32,
     mesh: &'a Mesh,
     scene: &'a Scene,
 }
@@ -102,8 +103,9 @@ impl<'a> Ray<'a> {
 
     pub fn new(mesh: &'a Mesh, scene: &'a Scene) -> Ray<'a> {
         Ray {
-            from: Vector3::zeros(),
-            to: Vector3::zeros(),
+            origin: Point3::origin(),
+            direction: Vector3::zeros(),
+            length: 0.0,
             mesh,
             scene,
         }
@@ -111,6 +113,7 @@ impl<'a> Ray<'a> {
 
     pub fn intersects_mesh(&self) -> bool {
 
+        // @todo consider depth-sorting the facets so a match is found quicker
         for facet in &self.mesh.facets {
             if self.intersects_facet(facet) {
                 return true;
@@ -121,7 +124,38 @@ impl<'a> Ray<'a> {
     }
 
     fn intersects_facet(&self, facet: &Facet) -> bool {
-        true
+        let edge_1 = &facet.points[1] - &facet.points[0];
+        let edge_2 = &facet.points[2] - &facet.points[0];
+
+        let pvec: Vector3<f32> = self.direction.cross(&edge_2);
+
+        let det = edge_1.dot(&pvec);
+
+        if det == 0.0 {
+            return false;
+        }
+
+        let invdet = 1.0/det;
+
+        let tvec = &self.origin - &facet.points[0];
+
+        let bv = tvec.dot(&pvec) * invdet;
+
+        if bv < 0.0 || bv > 1.0 {
+            return false;
+        }
+
+        let qvec = tvec.cross(&edge_1);
+
+        let bw = &self.direction.dot(&qvec) * invdet;
+
+        if bw < 0.0 || bv + bw > 1.0 {
+            return false;
+        }
+
+        let distance = edge_2.dot(&qvec) * invdet;
+
+        distance < self.length
     }
 
 }

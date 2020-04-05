@@ -72,6 +72,11 @@ pub fn mesh_to_svg_lines(
             //     segments = projected_line.split_screen_space_lines.len()
             // );
 
+
+            // if projected_line.split_screen_space_lines.len() > 1 {
+            //     panic!("ok here");
+            // }
+
             let culled: Vec<LineSegmentCulled> = projected_line
                 .split_screen_space_lines
                 .iter()
@@ -79,6 +84,7 @@ pub fn mesh_to_svg_lines(
                     visibility: get_visibility(
                         &line_segment,
                         &projected_line.projected_line,
+                        &scene,
                         &mut ray,
                     ),
                     line_segment: line_segment.to_owned(),

@@ -12,6 +12,10 @@ export function getRayIntersection(
   worldMatrix.invertToRef(tm);
   const testRay = Ray.Transform(ray, tm);
 
+  console.log(`ray.direction`, testRay.direction);
+  console.log(`ray.origin`, testRay.origin);
+  console.log(`ray.length`, testRay.length);
+
   const positions = [];
 
   for (let i = 0; i < positionsPrimitive.length; i += 3) {

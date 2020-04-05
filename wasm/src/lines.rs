@@ -2,8 +2,8 @@ extern crate nalgebra as na;
 
 use crate::mesh::Mesh;
 use crate::scene::{Scene, Ray};
-use na::{Point2, Point3, Vector3};
-use nalgebra::{distance_squared, Point};
+use na::{Point2, Point3, Vector3, Vector2};
+use nalgebra::{distance_squared, Point, distance};
 use wasm_bindgen::__rt::core::cmp::Ordering;
 
 #[derive(Copy, Clone)]
@@ -122,7 +122,6 @@ pub fn dedupe_lines(lines: Vec<ProjectedLine>) -> Vec<ProjectedLine> {
 #[derive(Copy, Clone)]
 enum IntersectionVisited {
     Untested,
-    NoIntersection,
     FoundIntersection(Point2<f32>),
 }
 
@@ -146,25 +145,31 @@ pub fn split_lines_by_intersection(lines: Vec<ProjectedLine>) -> Vec<ProjectedSp
 
                 let intersection = match &found_intersections[i] {
                     IntersectionVisited::Untested => {
+
                         let test_intersection =
                             find_intersection(&line, &line_compare.screen_space);
 
+                        if let Some(found) = &test_intersection {
+                            log!("& intersection for [{}] found: {}", i, found);
+                        }
+
                         found_intersections[j] = match test_intersection {
-                            None => IntersectionVisited::NoIntersection,
+                            None => IntersectionVisited::Untested,
                             Some(p) => IntersectionVisited::FoundIntersection(p),
                         };
 
                         test_intersection.clone()
                     }
-                    IntersectionVisited::NoIntersection => None,
                     IntersectionVisited::FoundIntersection(p) => Some(p.clone()),
                 };
 
                 if let Some(found) = intersection {
-                    // log!("intersection found: {}", found);
+                    log!("intersection for [{}] found: {}", i, found);
                     split_points.push(found);
                 }
             }
+
+            log!("& count split points: {}", split_points.len());
 
             let split_screen_space_lines = match split_points.len() {
                 0 => vec![projected_line.screen_space.clone()],
@@ -208,6 +213,9 @@ pub fn split_lines_by_intersection(lines: Vec<ProjectedLine>) -> Vec<ProjectedSp
                 }
             };
 
+
+            log!("& count split lines: {}", split_screen_space_lines.len());
+
             ProjectedSplitLine {
                 projected_line: projected_line.clone(),
                 split_screen_space_lines,
@@ -220,8 +228,43 @@ pub fn split_lines_by_intersection(lines: Vec<ProjectedLine>) -> Vec<ProjectedSp
 pub fn get_visibility(
     line_segment: &LineSegment2,
     projected_line: &ProjectedLine,
+    scene: &Scene,
     ray: &mut Ray
 ) -> LineVisibility {
+
+    let screen_space_length = distance_squared(&projected_line.screen_space.from, &projected_line.screen_space.to);
+    let start_distance = distance_squared(&projected_line.screen_space.from, &line_segment.from);
+    let end_distance = distance_squared(&projected_line.screen_space.from, &line_segment.to);
+
+    let start_scale = start_distance / screen_space_length;
+    let end_scale = end_distance / screen_space_length;
+
+    let scale = end_scale - (end_scale - start_scale) / 2.0;
+
+    log!("* from {}, to {}", projected_line.screen_space.from, projected_line.screen_space.to);
+    log!("* compared with from {}, to {}", line_segment.from, line_segment.to);
+    log!("* screen_space_length: {}, start_distance: {}, end_distance: {}", screen_space_length, start_distance,end_distance);
+    log!("* start_scale: {}, end_scale: {} overall_scale: {}", start_scale, end_scale, scale);
+
+    let test_screen_space = projected_line.screen_space.from.coords.lerp(&projected_line.screen_space.to.coords, scale);
+    let test_view_space = projected_line.view_space.from.coords.lerp(&projected_line.view_space.to.coords, scale);
+
+
+    // @todo should be a better way to do this?
+    let test_screen_space_point = Point2::new(test_screen_space.x, test_screen_space.y);
+
+    let ray_target = scene.unproject_point(&test_screen_space_point);
+    let ray_origin = test_view_space;
+    let ray_direction = (&ray_target.coords - &ray_origin).normalize();
+    let ray_length = (&ray_origin - &ray_target.coords).norm();
+
+    ray.origin = Point3::new(ray_origin.x, ray_origin.y, ray_origin.z);
+    ray.direction = ray_direction;
+    ray.length = ray_length;
+
+    log!("scale: {}", scale);
+    log!("test_screen_space_point: {}", test_screen_space_point);
+    log!("ray: origin: {} direction:{} target:{}, length:{}", ray.origin, ray.direction, ray_target, ray.length);
 
     match ray.intersects_mesh() {
         true => LineVisibility::VISIBLE,
