@@ -18,4 +18,6 @@ macro_rules! log {
 }
 
 #[cfg(not(feature = "console_log"))]
-macro_rules! log { ($( $t:tt )*) => (); }
+macro_rules! log {
+    ($( $t:tt )*) => {};
+}

@@ -8,20 +8,13 @@ mod svg_renderer;
 use mesh::{Mesh, Wireframe};
 use wasm_bindgen::prelude::*;
 
-// When the `wee_alloc` feature is enabled, use `wee_alloc` as the global
-// allocator.
-#[cfg(feature = "wee_alloc")]
-#[global_allocator]
-static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
-
 extern crate nalgebra as na;
-use na::{Point2, Point3};
 
 use crate::lines::{get_visibility, split_lines_by_intersection};
 use crate::scene::Ray;
 use crate::svg_renderer::{SvgConfig, SvgLineConfig};
 use crate::utils::set_panic_hook;
-use lines::{LineSegmentCulled, LineVisibility};
+use lines::LineSegmentCulled;
 
 extern crate web_sys;
 
@@ -68,32 +61,18 @@ pub fn mesh_to_svg_lines(
     let segments: Vec<LineSegmentCulled> = split_lines
         .iter()
         .flat_map(|projected_line| {
-            // log!(
-            //     "sub segment count: {segments}",
-            //     segments = projected_line.split_screen_space_lines.len()
-            // );
-
-            // if projected_line.split_screen_space_lines.len() > 1 {
-            //     panic!("ok here");
-            // }
-
             let culled: Vec<LineSegmentCulled> = projected_line
                 .split_screen_space_lines
                 .iter()
                 .enumerate()
-                .map(|(j, line_segment)| {
+                .map(|(_j, line_segment)| {
                     let seg = LineSegmentCulled {
                         visibility: get_visibility(
                             &line_segment,
                             &projected_line.projected_line,
                             &scene,
                             &mut ray,
-                            &index
                         ),
-                        // visibility: match j {
-                        //     n if n % 2 == 0 => LineVisibility::VISIBLE,
-                        //     _ => LineVisibility::OBSCURED,
-                        // },
                         line_segment: line_segment.to_owned(),
                     };
 
@@ -106,8 +85,6 @@ pub fn mesh_to_svg_lines(
             culled
         })
         .collect();
-
-    // log!("segments: {segments}", segments = segments.len());
 
     svg_renderer::screen_space_lines_to_fitted_svg(
         &segments,

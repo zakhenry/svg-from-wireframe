@@ -1,7 +1,6 @@
 use crate::lines::{dedupe_lines, LineSegment2, LineSegment3, ProjectedLine};
 use crate::mesh::{Facet, Mesh};
-use na::{Matrix4, Point2, Point3, Vector2, Vector3};
-use std::cmp::Ordering;
+use na::{Matrix4, Point2, Point3, Vector3};
 
 pub struct Scene {
     pub width: f32,
@@ -107,33 +106,16 @@ impl<'a> Ray<'a> {
         }
     }
 
-    pub fn intersects_mesh(&self, do_log: bool) -> bool {
-
-        let intersection_distance = &self.mesh.facets.iter()
-            .filter_map(|facet|self.intersects_facet(facet))
-            .map(|x| {
-                // if do_log {
-                //     log!("!found intersection: {}", x);
-                // }
-                x
-            })
-            .min_by(|a, b| a.partial_cmp(b).unwrap_or(Ordering::Equal));
-
-
-        match intersection_distance {
-            None => false,
-            Some(distance) => {
-
-                let intersection_point = &self.length - distance;
-
-                // if do_log {
-                //     log!("!intersection length: {}", intersection_point);
-                // }
-
-                intersection_point > 0.01
+    pub fn intersects_mesh(&self) -> bool {
+        for facet in &self.mesh.facets {
+            if let Some(distance) = self.intersects_facet(facet) {
+                if (&self.length - distance) > 0.001 {
+                    return true;
+                }
             }
         }
 
+        false
     }
 
     fn intersects_facet(&self, facet: &Facet) -> Option<f32> {
@@ -169,7 +151,7 @@ impl<'a> Ray<'a> {
         let distance = edge_2.dot(&qvec) * invdet;
 
         if distance > self.length {
-            return None
+            return None;
         }
 
         Some(distance)
