@@ -94,17 +94,15 @@ pub struct Ray<'a> {
     pub direction: Vector3<f32>,
     pub length: f32,
     mesh: &'a Mesh,
-    scene: &'a Scene,
 }
 
 impl<'a> Ray<'a> {
-    pub fn new(mesh: &'a Mesh, scene: &'a Scene) -> Ray<'a> {
+    pub fn new(mesh: &'a Mesh) -> Ray<'a> {
         Ray {
             origin: Point3::origin(),
             direction: Vector3::zeros(),
             length: 0.0,
             mesh,
-            scene,
         }
     }
 

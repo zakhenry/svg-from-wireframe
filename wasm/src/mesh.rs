@@ -145,10 +145,6 @@ impl Mesh {
         edge_candidates
     }
 
-    pub fn transform_normal(self, normal: Vector3<f32>, scene: Scene) -> Vector3<f32> {
-        scene.mesh_world_matrix.transform_vector(&normal)
-    }
-
     pub fn find_edge_lines(&self, scene: &Scene, silhouettes_only: bool) -> Vec<LineSegment3> {
         self.get_silhouette_candidates()
             .into_iter()

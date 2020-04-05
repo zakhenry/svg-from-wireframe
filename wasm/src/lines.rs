@@ -122,13 +122,19 @@ pub fn dedupe_lines(lines: Vec<ProjectedLine>) -> Vec<ProjectedLine> {
 #[derive(Copy, Clone)]
 enum IntersectionVisited {
     Untested,
+    NoIntersection,
     FoundIntersection(Point2<f32>),
 }
 
 // @todo there is an annoying amount of cloning going on in here
 pub fn split_lines_by_intersection(lines: Vec<ProjectedLine>) -> Vec<ProjectedSplitLine> {
+
+    let line_count = lines.len();
+
+    // @todo it might actually be quicker to just redundantly recalculate the intersections
+    // than allocate a bunch of memory to cache them. Intersection finding is not super expensive
     let mut found_intersections: Vec<IntersectionVisited> =
-        vec![IntersectionVisited::Untested; lines.len()];
+        vec![IntersectionVisited::Untested; line_count*line_count];
 
     lines
         .iter()
@@ -143,33 +149,38 @@ pub fn split_lines_by_intersection(lines: Vec<ProjectedLine>) -> Vec<ProjectedSp
                     continue;
                 }
 
-                let intersection = match &found_intersections[i] {
+                let intersection = match &found_intersections[i*line_count + j] {
                     IntersectionVisited::Untested => {
+
+                        // log!("@ running intersection test");
 
                         let test_intersection =
                             find_intersection(&line, &line_compare.screen_space);
 
                         if let Some(found) = &test_intersection {
-                            log!("& intersection for [{}] found: {}", i, found);
+                            // log!("& intersection for [{}] found: {}", i, found);
                         }
 
-                        found_intersections[j] = match test_intersection {
-                            None => IntersectionVisited::Untested,
-                            Some(p) => IntersectionVisited::FoundIntersection(p),
-                        };
+                        if j > i { // don't write to cache for tests already made
+                            found_intersections[j * line_count + i] = match &test_intersection {
+                                None => IntersectionVisited::NoIntersection,
+                                Some(p) => IntersectionVisited::FoundIntersection(p.clone()),
+                            };
+                        }
 
-                        test_intersection.clone()
+                        test_intersection
                     }
+                    IntersectionVisited::NoIntersection => None,
                     IntersectionVisited::FoundIntersection(p) => Some(p.clone()),
                 };
 
                 if let Some(found) = intersection {
-                    log!("intersection for [{}] found: {}", i, found);
+                    // log!("intersection for [{}] found: {}", i, found);
                     split_points.push(found);
                 }
             }
 
-            log!("& count split points: {}", split_points.len());
+            // log!("& count split points: {}", split_points.len());
 
             let split_screen_space_lines = match split_points.len() {
                 0 => vec![projected_line.screen_space.clone()],
