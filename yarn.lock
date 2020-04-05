@@ -10972,7 +10972,7 @@ void-elements@^2.0.0:
   integrity sha1-wGavtYK7HLQSjWDqkjkulNXp2+w=
 
 "wasm-svg-from-wireframe@file:./pkg":
-  version "0.1.0"
+  version "0.0.0"
 
 watchpack@^1.6.0:
   version "1.6.0"
