@@ -6,6 +6,12 @@ language: rust
 rust:
   - beta
 
+addons:
+  apt:
+    packages:
+      - libgconf-2-4
+  chrome: stable
+
 cache: cargo
 
 before_install:

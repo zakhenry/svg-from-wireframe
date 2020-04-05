@@ -222,8 +222,8 @@ export class AppComponent implements AfterViewInit {
                   cameraForwardVector: Float32Array.from(
                     (scene.activeCamera as ArcRotateCamera).getFrontPosition(1).asArray(),
                   ),
-                  width: scene.getEngine().getRenderWidth(),
-                  height: scene.getEngine().getRenderHeight(),
+                  sourceWidth: scene.getEngine().getRenderWidth(),
+                  sourceHeight: scene.getEngine().getRenderHeight(),
                 };
 
                 this.workerInput$.next(inputRender);

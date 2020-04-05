@@ -13,8 +13,8 @@ export interface LinesMesh {
 }
 
 export interface SvgLineConfig {
-  strokeWidth: number;
-  color: string;
+  strokeWidth?: number;
+  color?: string;
 }
 
 export interface SvgConfig {
@@ -22,7 +22,8 @@ export interface SvgConfig {
   height?: number;
   margin?: number;
   visible?: SvgLineConfig;
-  occluded?: SvgLineConfig | null; // null if the occluded lines should not be shown
+  obscured?: SvgLineConfig | null; // null if the occluded lines should not be shown
+  fitLines?: boolean;
 }
 
 export interface MeshToSvgWorkerPayload {
@@ -34,7 +35,7 @@ export interface MeshToSvgWorkerPayload {
   sceneProjectionMatrix: MatrixData;
   viewport: { x: number; y: number; width: number; height: number };
   cameraForwardVector: Vector3Data;
-  width: number;
-  height: number;
+  sourceWidth: number;
+  sourceHeight: number;
   svgConfig?: SvgConfig;
 }

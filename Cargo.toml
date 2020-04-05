@@ -1,6 +1,6 @@
 [package]
 name = "wasm-svg-from-wireframe"
-version = "0.1.0"
+version = "0.0.0"
 authors = ["Zak Henry <zak.henry@gmail.com>"]
 edition = "2018"
 

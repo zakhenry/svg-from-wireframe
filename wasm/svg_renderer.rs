@@ -1,13 +1,11 @@
 use crate::lines::{LineSegment2, LineSegmentCulled, LineVisibility};
 use na::{Point2, Vector2};
 
-#[derive(Copy, Clone)]
 pub struct SvgLineConfig {
     pub stroke_width: i32,
-    pub stroke: &'static str,
+    pub stroke: String,
 }
 
-#[derive(Copy, Clone)]
 pub struct SvgConfig {
     pub width: i32,
     pub height: i32,
@@ -19,7 +17,7 @@ pub struct SvgConfig {
 
 fn scale_screen_space_lines(
     screen_space_lines: &[LineSegmentCulled],
-    svg_config: SvgConfig,
+    svg_config: &SvgConfig,
 ) -> Vec<LineSegmentCulled> {
     let all_points: Vec<Point2<f32>> = screen_space_lines
         .iter()
@@ -64,7 +62,7 @@ fn scale_screen_space_lines(
 
 pub fn screen_space_lines_to_fitted_svg(
     screen_space_lines: &[LineSegmentCulled],
-    svg_config: SvgConfig,
+    svg_config: &SvgConfig,
 ) -> String {
     let svg = match svg_config.fit_lines {
         false => line_segments_to_svg(screen_space_lines, svg_config),
@@ -77,7 +75,7 @@ pub fn screen_space_lines_to_fitted_svg(
     svg
 }
 
-fn line_segments_to_svg(segments: &[LineSegmentCulled], config: SvgConfig) -> String {
+fn line_segments_to_svg(segments: &[LineSegmentCulled], config: &SvgConfig) -> String {
     let (visible, obscured) = segments.iter().partition(|&seg| match seg.visibility {
         LineVisibility::VISIBLE => true,
         _ => false,
@@ -88,17 +86,17 @@ fn line_segments_to_svg(segments: &[LineSegmentCulled], config: SvgConfig) -> St
 {obscured}
 {visible}
 </svg>",
-        width = config.width,
-        height = config.height,
-        visible = create_path_element(visible, config.visible),
-        obscured = match config.obscured {
+        width = &config.width,
+        height = &config.height,
+        visible = create_path_element(visible, &config.visible),
+        obscured = match &config.obscured {
             Some(conf) => create_path_element(obscured, conf),
             None => "".to_owned(),
         }
     )
 }
 
-fn create_path_element(lines: Vec<LineSegmentCulled>, line_config: SvgLineConfig) -> String {
+fn create_path_element(lines: Vec<LineSegmentCulled>, line_config: &SvgLineConfig) -> String {
     let mut path_def = "".to_string();
     let mut current: Option<Point2<f32>> = None;
 

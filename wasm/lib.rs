@@ -34,8 +34,35 @@ pub fn mesh_to_svg_lines(
     projection_matrix: Box<[f32]>,
     mesh_world_matrix: Box<[f32]>,
     camera_forward_vector: Box<[f32]>,
+    svg_config_width: Option<i32>,
+    svg_config_height: Option<i32>,
+    svg_config_margin: Option<i32>,
+    svg_config_visible_stroke_width: Option<i32>,
+    svg_config_visible_stroke: Option<String>,
+    svg_config_hide_obscured: Option<bool>,
+    svg_config_obscured_stroke_width: Option<i32>,
+    svg_config_obscured_stroke: Option<String>,
+    svg_config_fit_lines: Option<bool>,
 ) -> String {
     set_panic_hook();
+
+    let svg_config = SvgConfig {
+        width: svg_config_width.unwrap_or(canvas_width),
+        height: svg_config_height.unwrap_or(canvas_height),
+        margin: svg_config_margin.unwrap_or(100),
+        visible: SvgLineConfig {
+            stroke_width: svg_config_visible_stroke_width.unwrap_or(4),
+            stroke: svg_config_visible_stroke.unwrap_or("black".to_owned()),
+        },
+        obscured: match svg_config_hide_obscured {
+            Some(false) | None => Some(SvgLineConfig {
+                stroke_width: svg_config_obscured_stroke_width.unwrap_or(2),
+                stroke: svg_config_obscured_stroke.unwrap_or("grey".to_owned()),
+            }),
+            Some(true) => None,
+        },
+        fit_lines: svg_config_fit_lines.unwrap_or(true),
+    };
 
     let mesh = Mesh::new(mesh_indices, mesh_vertices, mesh_normals);
     let wireframe = Wireframe::new(wireframe_indices, wireframe_vertices);
@@ -86,21 +113,5 @@ pub fn mesh_to_svg_lines(
         })
         .collect();
 
-    svg_renderer::screen_space_lines_to_fitted_svg(
-        &segments,
-        SvgConfig {
-            width: canvas_width,
-            height: canvas_height,
-            margin: 100,
-            visible: SvgLineConfig {
-                stroke_width: 4,
-                stroke: "black",
-            },
-            obscured: Some(SvgLineConfig {
-                stroke_width: 2,
-                stroke: "grey",
-            }),
-            fit_lines: true,
-        },
-    )
+    svg_renderer::screen_space_lines_to_fitted_svg(&segments, &svg_config)
 }

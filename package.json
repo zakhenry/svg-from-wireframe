@@ -48,7 +48,7 @@
     "rxjs": "~6.5.4",
     "tslib": "^1.10.0",
     "zone.js": "~0.10.2",
-    "wasm-svg-from-wireframe": "file:./dist/wireframe-svg/wasm-pkg"
+    "wasm-svg-from-wireframe": "file:./pkg"
   },
   "devDependencies": {
     "@angular-devkit/build-angular": "~0.900.4",
