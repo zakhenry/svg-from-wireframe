@@ -1,6 +1,6 @@
 use crate::lines::{dedupe_lines, LineSegment2, LineSegment3, ProjectedLine};
+use crate::mesh::{Facet, Mesh};
 use na::{Matrix4, Point2, Point3, Vector2, Vector3};
-use crate::mesh::{Mesh, Facet};
 
 pub struct Scene {
     pub width: f32,
@@ -89,8 +89,6 @@ impl Scene {
     }
 }
 
-
-
 pub struct Ray<'a> {
     pub origin: Point3<f32>,
     pub direction: Vector3<f32>,
@@ -100,7 +98,6 @@ pub struct Ray<'a> {
 }
 
 impl<'a> Ray<'a> {
-
     pub fn new(mesh: &'a Mesh, scene: &'a Scene) -> Ray<'a> {
         Ray {
             origin: Point3::origin(),
@@ -112,7 +109,6 @@ impl<'a> Ray<'a> {
     }
 
     pub fn intersects_mesh(&self) -> bool {
-
         // @todo consider depth-sorting the facets so a match is found quicker
         for facet in &self.mesh.facets {
             if self.intersects_facet(facet) {
@@ -135,7 +131,7 @@ impl<'a> Ray<'a> {
             return false;
         }
 
-        let invdet = 1.0/det;
+        let invdet = 1.0 / det;
 
         let tvec = &self.origin - &facet.points[0];
 
@@ -157,5 +153,4 @@ impl<'a> Ray<'a> {
 
         distance < self.length
     }
-
 }

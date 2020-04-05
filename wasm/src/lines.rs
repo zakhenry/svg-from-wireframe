@@ -232,39 +232,52 @@ pub fn get_visibility(
     ray: &mut Ray
 ) -> LineVisibility {
 
-    let screen_space_length = distance_squared(&projected_line.screen_space.from, &projected_line.screen_space.to);
-    let start_distance = distance_squared(&projected_line.screen_space.from, &line_segment.from);
-    let end_distance = distance_squared(&projected_line.screen_space.from, &line_segment.to);
+    let screen_space_length = distance(&projected_line.screen_space.from, &projected_line.screen_space.to);
+    let start_distance = distance(&projected_line.screen_space.from, &line_segment.from);
+    let end_distance = distance(&projected_line.screen_space.from, &line_segment.to);
 
     let start_scale = start_distance / screen_space_length;
     let end_scale = end_distance / screen_space_length;
 
     let scale = end_scale - (end_scale - start_scale) / 2.0;
 
-    log!("* from {}, to {}", projected_line.screen_space.from, projected_line.screen_space.to);
-    log!("* compared with from {}, to {}", line_segment.from, line_segment.to);
-    log!("* screen_space_length: {}, start_distance: {}, end_distance: {}", screen_space_length, start_distance,end_distance);
-    log!("* start_scale: {}, end_scale: {} overall_scale: {}", start_scale, end_scale, scale);
-
     let test_screen_space = projected_line.screen_space.from.coords.lerp(&projected_line.screen_space.to.coords, scale);
     let test_view_space = projected_line.view_space.from.coords.lerp(&projected_line.view_space.to.coords, scale);
+
 
 
     // @todo should be a better way to do this?
     let test_screen_space_point = Point2::new(test_screen_space.x, test_screen_space.y);
 
-    let ray_target = scene.unproject_point(&test_screen_space_point);
-    let ray_origin = test_view_space;
-    let ray_direction = (&ray_target.coords - &ray_origin).normalize();
-    let ray_length = (&ray_origin - &ray_target.coords).norm();
+    let ray_target = test_view_space;
+    let ray_origin = scene.unproject_point(&test_screen_space_point);
+    let ray_direction = (&ray_target - &ray_origin.coords).normalize();
+    let ray_length = (&ray_origin.coords - &ray_target).norm();
 
     ray.origin = Point3::new(ray_origin.x, ray_origin.y, ray_origin.z);
     ray.direction = ray_direction;
     ray.length = ray_length;
 
-    log!("scale: {}", scale);
-    log!("test_screen_space_point: {}", test_screen_space_point);
-    log!("ray: origin: {} direction:{} target:{}, length:{}", ray.origin, ray.direction, ray_target, ray.length);
+    return match (line_segment.from.x, line_segment.to.x) {
+        (from, to) if from > 670.0 && to > 670.0 => {
+
+            log!("* from {}, to {}", projected_line.screen_space.from, projected_line.screen_space.to);
+            log!("* compared with from {}, to {}", line_segment.from, line_segment.to);
+            log!("* screen_space_length: {}, start_distance: {}, end_distance: {}", screen_space_length, start_distance,end_distance);
+            log!("* start_scale: {}, end_scale: {} overall_scale: {}", start_scale, end_scale, scale);
+
+            log!("# testing {},{} at point {}", line_segment.from, line_segment.to, test_screen_space);
+
+            log!("scale: {}", scale);
+            log!("test_screen_space_point: {}", test_screen_space_point);
+            log!("ray: origin: {} direction:{} target:{}, length:{}", ray.origin, ray.direction, ray_target, ray.length);
+
+
+            LineVisibility::VISIBLE
+        },
+        _ => LineVisibility::OBSCURED,
+    };
+
 
     match ray.intersects_mesh() {
         true => LineVisibility::VISIBLE,

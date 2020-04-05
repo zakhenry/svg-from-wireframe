@@ -71,19 +71,17 @@ pub fn screen_space_lines_to_fitted_svg(
         true => {
             let scaled = scale_screen_space_lines(screen_space_lines, svg_config);
             line_segments_to_svg(&scaled, svg_config)
-        },
+        }
     };
 
     svg
 }
 
 fn line_segments_to_svg(segments: &[LineSegmentCulled], config: SvgConfig) -> String {
-    let (visible, obscured) = segments
-        .iter()
-        .partition(|&seg| match seg.visibility {
-            LineVisibility::VISIBLE => true,
-            _ => false,
-        });
+    let (visible, obscured) = segments.iter().partition(|&seg| match seg.visibility {
+        LineVisibility::VISIBLE => true,
+        _ => false,
+    });
 
     format!(
         "<svg viewBox=\"0 0 {width} {height}\" xmlns=\"http://www.w3.org/2000/svg\">

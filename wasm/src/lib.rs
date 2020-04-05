@@ -18,10 +18,10 @@ extern crate nalgebra as na;
 use na::{Point2, Point3};
 
 use crate::lines::{get_visibility, split_lines_by_intersection};
+use crate::scene::Ray;
 use crate::svg_renderer::{SvgConfig, SvgLineConfig};
 use crate::utils::set_panic_hook;
 use lines::{LineSegmentCulled, LineVisibility};
-use crate::scene::Ray;
 
 extern crate web_sys;
 
@@ -72,7 +72,6 @@ pub fn mesh_to_svg_lines(
             //     segments = projected_line.split_screen_space_lines.len()
             // );
 
-
             // if projected_line.split_screen_space_lines.len() > 1 {
             //     panic!("ok here");
             // }
@@ -96,7 +95,6 @@ pub fn mesh_to_svg_lines(
         .collect();
 
     // log!("segments: {segments}", segments = segments.len());
-
 
     svg_renderer::screen_space_lines_to_fitted_svg(
         &segments,
