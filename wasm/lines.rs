@@ -87,7 +87,6 @@ pub fn find_intersection(a: &LineSegment2, b: &LineSegment2) -> Option<Point2<f3
 
 /// @todo work out how to make this not take Copy of line segments
 pub fn dedupe_lines(lines: Vec<ProjectedLine>) -> Vec<ProjectedLine> {
-
     let deduped: Vec<ProjectedLine> = lines
         .iter()
         .enumerate()
@@ -145,7 +144,6 @@ pub fn split_lines_by_intersection(lines: Vec<ProjectedLine>) -> Vec<ProjectedSp
 
                 let intersection = match &found_intersections[i * line_count + j] {
                     IntersectionVisited::Untested => {
-
                         let test_intersection =
                             find_intersection(&line, &line_compare.screen_space);
 

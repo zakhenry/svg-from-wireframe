@@ -3,5 +3,6 @@
   "dest": "../../dist/wireframe-svg",
   "lib": {
     "entryFile": "src/public-api.ts"
-  }
+  },
+  "whitelistedNonPeerDependencies": ["wasm-svg-from-wireframe"]
 }

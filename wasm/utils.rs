@@ -9,6 +9,7 @@ pub fn set_panic_hook() {
     console_error_panic_hook::set_once();
 }
 
+#[allow(unused_macros)]
 #[macro_use]
 #[cfg(feature = "console_log")]
 macro_rules! log {
@@ -17,6 +18,7 @@ macro_rules! log {
     }
 }
 
+#[allow(unused_macros)]
 #[cfg(not(feature = "console_log"))]
 macro_rules! log {
     ($( $t:tt )*) => {};

@@ -109,7 +109,7 @@ impl<'a> Ray<'a> {
     pub fn intersects_mesh(&self) -> bool {
         for facet in &self.mesh.facets {
             if let Some(distance) = self.intersects_facet(facet) {
-                if (&self.length - distance) > 0.001 {
+                if (&self.length - distance) > 0.01 {
                     return true;
                 }
             }
