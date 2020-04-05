@@ -1,21 +1,20 @@
 type MatrixData = Float32Array;
-
-type Vector3Data = number[];
+type Vector3Data = Float32Array;
 
 export interface TriangleMesh {
   positions: Float32Array;
-  indices: Int32Array;
+  indices: Uint32Array;
   normals: Float32Array;
 }
 
 export interface LinesMesh {
   positions: Float32Array;
-  indices: Int32Array;
+  indices: Uint32Array;
 }
 
 export interface SvgLineConfig {
-  strokeWidth: number;
-  color: string;
+  strokeWidth?: number;
+  color?: string;
 }
 
 export interface SvgConfig {
@@ -23,7 +22,8 @@ export interface SvgConfig {
   height?: number;
   margin?: number;
   visible?: SvgLineConfig;
-  occluded?: SvgLineConfig | null; // null if the occluded lines should not be shown
+  obscured?: SvgLineConfig | null; // null if the occluded lines should not be shown
+  fitLines?: boolean;
 }
 
 export interface MeshToSvgWorkerPayload {
@@ -35,7 +35,7 @@ export interface MeshToSvgWorkerPayload {
   sceneProjectionMatrix: MatrixData;
   viewport: { x: number; y: number; width: number; height: number };
   cameraForwardVector: Vector3Data;
-  width: number;
-  height: number;
+  sourceWidth: number;
+  sourceHeight: number;
   svgConfig?: SvgConfig;
 }
