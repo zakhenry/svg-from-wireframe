@@ -26,7 +26,7 @@ before_install:
   - export PATH="$HOME/.yarn/bin:$PATH"
 
 install:
-  - mkdir -p dist/wireframe-svg/wasm-pkg
+  - mkdir -p pkg
   - yarn --frozen-lockfile --non-interactive --no-progress
 
 script:
