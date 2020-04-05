@@ -2,24 +2,20 @@ sudo: false
 
 dist: bionic
 
-language: node_js
+language: rust
 node_js:
   - '12'
 
-addons:
-  apt:
-    packages:
-      - libgconf-2-4
-  chrome: stable
-
-cache: yarn
+cache: cargo
 
 before_install:
-  - curl -o- -L https://yarnpkg.com/install.sh | bash
-  - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-  - curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
-  - export PATH="$HOME/.yarn/bin:$PATH"
+  - (test -x $HOME/.cargo/bin/cargo-install-update || cargo install cargo-update)
+  - (test -x $HOME/.cargo/bin/cargo-generate || cargo install --vers "^0.2" cargo-generate)
+  - cargo install-update -a
+  - curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh -s -- -f
   - export PATH="$HOME/.cargo/bin:$PATH"
+  - curl -o- -L https://yarnpkg.com/install.sh | bash
+  - export PATH="$HOME/.yarn/bin:$PATH"
 
 install:
   - mkdir -p dist/wireframe-svg/wasm-pkg
