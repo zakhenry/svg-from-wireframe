@@ -133,6 +133,7 @@ pub fn split_lines_by_intersection(lines: Vec<ProjectedLine>) -> Vec<ProjectedSp
 
     // @todo it might actually be quicker to just redundantly recalculate the intersections
     // than allocate a bunch of memory to cache them. Intersection finding is not super expensive
+    // @todo this cache size can be halved in size
     let mut found_intersections: Vec<IntersectionVisited> =
         vec![IntersectionVisited::Untested; line_count*line_count];
 
@@ -225,7 +226,7 @@ pub fn split_lines_by_intersection(lines: Vec<ProjectedLine>) -> Vec<ProjectedSp
             };
 
 
-            log!("& count split lines: {}", split_screen_space_lines.len());
+            // log!("& count split lines: {}", split_screen_space_lines.len());
 
             ProjectedSplitLine {
                 projected_line: projected_line.clone(),
@@ -240,8 +241,11 @@ pub fn get_visibility(
     line_segment: &LineSegment2,
     projected_line: &ProjectedLine,
     scene: &Scene,
-    ray: &mut Ray
+    ray: &mut Ray,
+    index: &usize
 ) -> LineVisibility {
+
+    // log!("~checking visibility");
 
     let screen_space_length = distance(&projected_line.screen_space.from, &projected_line.screen_space.to);
     let start_distance = distance(&projected_line.screen_space.from, &line_segment.from);
@@ -250,7 +254,7 @@ pub fn get_visibility(
     let start_scale = start_distance / screen_space_length;
     let end_scale = end_distance / screen_space_length;
 
-    let scale = end_scale - (end_scale - start_scale) / 2.0;
+    let scale = start_scale + (end_scale - start_scale) / 2.0;
 
     let test_screen_space = projected_line.screen_space.from.coords.lerp(&projected_line.screen_space.to.coords, scale);
     let test_view_space = projected_line.view_space.from.coords.lerp(&projected_line.view_space.to.coords, scale);
@@ -269,29 +273,45 @@ pub fn get_visibility(
     ray.direction = ray_direction;
     ray.length = ray_length;
 
-    return match (line_segment.from.x, line_segment.to.x) {
-        (from, to) if from > 670.0 && to > 670.0 => {
+    // let l = distance(&projected_line.view_space.from, &projected_line.view_space.to);
+    // let do_log = l >7.0 && l < 8.0 && *index == 0;
+    // let do_log = *index == 1;
+    let do_log = false;
 
-            log!("* from {}, to {}", projected_line.screen_space.from, projected_line.screen_space.to);
-            log!("* compared with from {}, to {}", line_segment.from, line_segment.to);
-            log!("* screen_space_length: {}, start_distance: {}, end_distance: {}", screen_space_length, start_distance,end_distance);
-            log!("* start_scale: {}, end_scale: {} overall_scale: {}", start_scale, end_scale, scale);
-
-            log!("# testing {},{} at point {}", line_segment.from, line_segment.to, test_screen_space);
-
-            log!("scale: {}", scale);
-            log!("test_screen_space_point: {}", test_screen_space_point);
-            log!("ray: origin: {} direction:{} target:{}, length:{}", ray.origin, ray.direction, ray_target, ray.length);
+    let intersection = ray.intersects_mesh(do_log);
 
 
-            LineVisibility::VISIBLE
-        },
-        _ => LineVisibility::OBSCURED,
-    };
+    // match (line_segment.from.x, line_segment.to.x) {
+        // (from, to) if from > 670.0 && to > 670.0 => {
+    // match do_log {
+    //     true => {
+    //         log!("* from {}, to {}", projected_line.screen_space.from, projected_line.screen_space.to);
+    //         log!("* compared with from {}, to {}", line_segment.from, line_segment.to);
+    //         log!("* screen_space_length: {}, start_distance: {}, end_distance: {}", screen_space_length, start_distance,end_distance);
+    //         log!("* start_scale: {}, end_scale: {} overall_scale: {}", start_scale, end_scale, scale);
+    //
+    //         log!("# testing {},{} at point {}", line_segment.from, line_segment.to, test_screen_space);
+    //
+    //         let view_space_projected = scene.project_point(&Point3::new(test_view_space.x, test_view_space.y, test_view_space.z));
+    //
+    //         log!("# unprojection test: {}", view_space_projected);
+    //
+    //         assert!(relative_eq!(test_screen_space, view_space_projected.coords), "should be equal, issue is here!");
+    //
+    //         log!("scale: {}", scale);
+    //         log!("test_screen_space_point: {}", test_screen_space_point);
+    //         log!("ray: origin: {} direction:{} target:{}, length:{}", ray.origin, ray.direction, ray_target, ray.length);
+    //         log!("intersection? {}", intersection);
+    //
+    //
+    //         LineVisibility::VISIBLE
+    //     },
+    //     _ => LineVisibility::OBSCURED,
+    // };
 
 
-    match ray.intersects_mesh() {
-        true => LineVisibility::VISIBLE,
-        false => LineVisibility::OBSCURED,
+    match intersection {
+        false => LineVisibility::VISIBLE,
+        true => LineVisibility::OBSCURED,
     }
 }

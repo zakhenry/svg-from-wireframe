@@ -10,8 +10,12 @@ pub fn set_panic_hook() {
 }
 
 #[macro_use]
+#[cfg(feature = "console_log")]
 macro_rules! log {
     ( $( $t:tt )* ) => {
         web_sys::console::log_1(&format!( $( $t )* ).into());
     }
 }
+
+#[cfg(not(feature = "console_log"))]
+macro_rules! log { ($( $t:tt )*) => (); }

@@ -177,8 +177,9 @@ export class AppComponent implements AfterViewInit {
 
     this.zone.runOutsideAngular(() => engine.runRenderLoop(() => scene.render()));
 
-    const model = 'slotted-cube';
-    // const model = 'raspi';
+    // const model = 'cube';
+    // const model = 'slotted-cube';
+    const model = 'raspi';
     // const model = 'diamond';
     // const model = 'brick';
     // const model = 'silhouette';

@@ -1,6 +1,7 @@
 use crate::lines::{dedupe_lines, LineSegment2, LineSegment3, ProjectedLine};
 use crate::mesh::{Facet, Mesh};
 use na::{Matrix4, Point2, Point3, Vector2, Vector3};
+use std::cmp::Ordering;
 
 pub struct Scene {
     pub width: f32,
@@ -67,8 +68,8 @@ impl Scene {
 
     pub fn project_line(&self, line: &LineSegment3) -> LineSegment2 {
         LineSegment2 {
-            from: self.project_point(&line.to),
-            to: self.project_point(&line.from),
+            from: self.project_point(&line.from),
+            to: self.project_point(&line.to),
         }
     }
 
@@ -106,18 +107,36 @@ impl<'a> Ray<'a> {
         }
     }
 
-    pub fn intersects_mesh(&self) -> bool {
-        // @todo consider depth-sorting the facets so a match is found quicker
-        for facet in &self.mesh.facets {
-            if self.intersects_facet(facet) {
-                return true;
+    pub fn intersects_mesh(&self, do_log: bool) -> bool {
+
+        let intersection_distance = &self.mesh.facets.iter()
+            .filter_map(|facet|self.intersects_facet(facet))
+            .map(|x| {
+                // if do_log {
+                //     log!("!found intersection: {}", x);
+                // }
+                x
+            })
+            .min_by(|a, b| a.partial_cmp(b).unwrap_or(Ordering::Equal));
+
+
+        match intersection_distance {
+            None => false,
+            Some(distance) => {
+
+                let intersection_point = &self.length - distance;
+
+                // if do_log {
+                //     log!("!intersection length: {}", intersection_point);
+                // }
+
+                intersection_point > 0.01
             }
         }
 
-        false
     }
 
-    fn intersects_facet(&self, facet: &Facet) -> bool {
+    fn intersects_facet(&self, facet: &Facet) -> Option<f32> {
         let edge_1 = &facet.points[1] - &facet.points[0];
         let edge_2 = &facet.points[2] - &facet.points[0];
 
@@ -126,7 +145,7 @@ impl<'a> Ray<'a> {
         let det = edge_1.dot(&pvec);
 
         if det == 0.0 {
-            return false;
+            return None;
         }
 
         let invdet = 1.0 / det;
@@ -136,7 +155,7 @@ impl<'a> Ray<'a> {
         let bv = tvec.dot(&pvec) * invdet;
 
         if bv < 0.0 || bv > 1.0 {
-            return false;
+            return None;
         }
 
         let qvec = tvec.cross(&edge_1);
@@ -144,11 +163,15 @@ impl<'a> Ray<'a> {
         let bw = &self.direction.dot(&qvec) * invdet;
 
         if bw < 0.0 || bv + bw > 1.0 {
-            return false;
+            return None;
         }
 
         let distance = edge_2.dot(&qvec) * invdet;
 
-        distance < self.length
+        if distance > self.length {
+            return None
+        }
+
+        Some(distance)
     }
 }

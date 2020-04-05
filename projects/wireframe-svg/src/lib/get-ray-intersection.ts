@@ -7,14 +7,11 @@ export function getRayIntersection(
   positionsPrimitive: Float32Array,
   indices: Int32Array,
   worldMatrix: Matrix,
+  logRay = false,
 ): number | null {
   const tm = Matrix.Identity();
   worldMatrix.invertToRef(tm);
   const testRay = Ray.Transform(ray, tm);
-
-  console.log(`ray.direction`, testRay.direction);
-  console.log(`ray.origin`, testRay.origin);
-  console.log(`ray.length`, testRay.length);
 
   const positions = [];
 
@@ -33,6 +30,14 @@ export function getRayIntersection(
   const worldDirection = Vector3.TransformNormal(direction, worldMatrix);
   const pickedPoint = worldDirection.addInPlace(worldOrigin);
   const distance = Vector3.Distance(worldOrigin, pickedPoint);
+
+  if (logRay) {
+    console.log(`ray.direction`, testRay.direction);
+    console.log(`ray.origin`, testRay.origin);
+    console.log(`ray.length`, testRay.length);
+    console.log(`!intersectionInfo.distance`, intersectionInfo.distance);
+    console.log(`!distance`, distance);
+  }
 
   return distance;
 }

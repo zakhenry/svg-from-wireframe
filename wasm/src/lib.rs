@@ -63,6 +63,7 @@ pub fn mesh_to_svg_lines(
     let split_lines = split_lines_by_intersection(projected);
 
     let mut ray = Ray::new(&mesh);
+    let mut index: usize = 0;
 
     let segments: Vec<LineSegmentCulled> = split_lines
         .iter()
@@ -80,18 +81,25 @@ pub fn mesh_to_svg_lines(
                 .split_screen_space_lines
                 .iter()
                 .enumerate()
-                .map(|(i, line_segment)| LineSegmentCulled {
-                    visibility: get_visibility(
-                        &line_segment,
-                        &projected_line.projected_line,
-                        &scene,
-                        &mut ray,
-                    ),
-                    // visibility: match i {
-                    //     n if n % 2 == 0 => LineVisibility::VISIBLE,
-                    //     _ => LineVisibility::OBSCURED,
-                    // },
-                    line_segment: line_segment.to_owned(),
+                .map(|(j, line_segment)| {
+                    let seg = LineSegmentCulled {
+                        visibility: get_visibility(
+                            &line_segment,
+                            &projected_line.projected_line,
+                            &scene,
+                            &mut ray,
+                            &index
+                        ),
+                        // visibility: match j {
+                        //     n if n % 2 == 0 => LineVisibility::VISIBLE,
+                        //     _ => LineVisibility::OBSCURED,
+                        // },
+                        line_segment: line_segment.to_owned(),
+                    };
+
+                    index += 1;
+
+                    seg
                 })
                 .collect();
 

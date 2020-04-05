@@ -71,6 +71,7 @@ export class MeshToSvg {
 
         console.timeEnd('perf: wasm call');
         console.time('perf: js call');
+        // return this.render(input);
         this.render(input);
         console.timeEnd('perf: js call');
         return wasmSvg;
