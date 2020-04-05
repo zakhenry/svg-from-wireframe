@@ -37,11 +37,7 @@ import { createMeshPair, MeshPairData } from './load-mesh';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AppComponent implements AfterViewInit {
-  constructor(
-    private zone: NgZone,
-    private http: HttpClient,
-    private renderer: Renderer2,
-  ) {}
+  constructor(private zone: NgZone, private http: HttpClient, private renderer: Renderer2) {}
   public title = 'wireframe-svg-demo';
   public svgVisible = true;
 
@@ -223,7 +219,9 @@ export class AppComponent implements AfterViewInit {
                   sceneViewMatrix: scene.getViewMatrix().toArray() as Float32Array,
                   sceneProjectionMatrix: scene.getProjectionMatrix().toArray() as Float32Array,
                   viewport: scene.activeCamera.viewport,
-                  cameraForwardVector: Float32Array.from((scene.activeCamera as ArcRotateCamera).getFrontPosition(1).asArray()),
+                  cameraForwardVector: Float32Array.from(
+                    (scene.activeCamera as ArcRotateCamera).getFrontPosition(1).asArray(),
+                  ),
                   width: scene.getEngine().getRenderWidth(),
                   height: scene.getEngine().getRenderHeight(),
                 };
@@ -235,7 +233,6 @@ export class AppComponent implements AfterViewInit {
         }),
       )
       .subscribe();
-
   }
 
   public saveSvg(url: SafeUrl) {

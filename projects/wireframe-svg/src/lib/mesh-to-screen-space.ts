@@ -46,7 +46,6 @@ export function viewSpaceLinesToScreenSpaceLines(
       return { screenSpace, viewSpace };
     });
 
-
   const projectedLines = dedupeLines(projectedLinesWithDuplicates);
 
   const intersectionsMap: Map<number, Vector2[]> = new Map();
@@ -122,24 +121,11 @@ export function viewSpaceLinesToScreenSpaceLines(
         sceneProjectionMatrix,
       );
 
-      let l = Vector3.Distance(projected.viewSpace[0], projected.viewSpace[1]);
-//     (l, i) if l >7.0 && l < 8.0 && i == 0 => {
-
-      // const logOutput = testLine[0].point.x > 670 && testLine[1].point.x > 670;
-      const logOutput = false && l >7.0 && l < 8.0 && i == 0;
-
       const ray = Ray.CreateNewFromTo(start, Vector3.TransformCoordinates(testPointViewSpace, meshWorldMatrix));
 
-      const pick = getRayIntersection(ray, mesh.positions, mesh.indices, meshWorldMatrix, logOutput);
+      const pick = getRayIntersection(ray, mesh.positions, mesh.indices, meshWorldMatrix);
 
       const obscured = pick !== null && ray.length - pick > 0.01;
-
-      if (logOutput) {
-
-        console.log(`testLine`, testLine);
-        console.log(`scale`, scale);
-
-      }
 
       if (currentObscured === null) {
         currentObscured = obscured;

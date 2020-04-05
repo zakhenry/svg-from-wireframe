@@ -53,7 +53,7 @@ export class MeshToSvg {
 
         // console.log(`mesh`, input.mesh);
 
-        console.time('perf: wasm call');
+        // console.time('perf: wasm call');
 
         const wasmSvg = wasm.mesh_to_svg_lines(
           input.width,
@@ -69,11 +69,6 @@ export class MeshToSvg {
           input.cameraForwardVector,
         );
 
-        console.timeEnd('perf: wasm call');
-        console.time('perf: js call');
-        // return this.render(input);
-        this.render(input);
-        console.timeEnd('perf: js call');
         return wasmSvg;
       }),
     );

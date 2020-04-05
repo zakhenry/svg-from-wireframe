@@ -3,3 +3,6 @@ dist
 node_modules
 .history
 src/assets
+pkg
+target
+tests
