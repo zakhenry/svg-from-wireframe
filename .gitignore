@@ -4,7 +4,7 @@
 /dist
 /tmp
 /out-tsc
-# Only exists if Bazel was run
+# Only exists if Bazel wasm run
 /bazel-out
 
 # dependencies

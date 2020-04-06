@@ -3,5 +3,8 @@
   "version": "0.0.1",
   "peerDependencies": {
     "tslib": "^1.10.0"
+  },
+  "dependencies": {
+    "mesh-to-svg": "1.0.0"
   }
 }
