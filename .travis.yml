@@ -2,35 +2,32 @@ sudo: false
 
 dist: bionic
 
-language: rust
-rust:
-  - beta
+language: node_js
+node_js:
+  - '12'
 
-cache: cargo
+addons:
+  apt:
+    packages:
+      - libgconf-2-4
+  chrome: stable
+
+cache: yarn
 
 before_install:
-#  - (test -x $HOME/.cargo/bin/cargo-install-update || cargo install cargo-update)
-#  - (test -x $HOME/.cargo/bin/cargo-generate || cargo install --vers "^0.2" cargo-generate)
-#  - cargo install-update -a
-  - curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh -s -- -f
-  - export PATH="$HOME/.cargo/bin:$PATH"
-  - curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.35.3/install.sh | bash
-  - nvm install 12
   - curl -o- -L https://yarnpkg.com/install.sh | bash
   - export PATH="$HOME/.yarn/bin:$PATH"
 
 install:
-  - mkdir -p pkg
   - yarn --frozen-lockfile --non-interactive --no-progress
 
 script:
   # lint
   - yarn demo:lint:check
   - yarn prettier:check
-  # tests @todo :(
+  # tests
+  - yarn lib:test:ci
   # build
-  - yarn wasm:build:prod
-  - yarn --force --non-interactive --no-progress
   - yarn lib:build:prod
   # prep deploy
   - rm dist/wireframe-svg/README.md && cp README.md dist/wireframe-svg

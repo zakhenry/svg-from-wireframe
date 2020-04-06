@@ -5,6 +5,6 @@
     "tslib": "^1.10.0"
   },
   "dependencies": {
-    "wasm-svg-from-wireframe": "file:./wasm-pkg"
+    "mesh-to-svg": "1.0.0"
   }
 }

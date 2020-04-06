@@ -44,11 +44,3 @@ testem.log
 # System Files
 .DS_Store
 Thumbs.db
-
-/target
-**/*.rs.bk
-Cargo.lock
-bin/
-pkg/
-wasm-pack.log
-

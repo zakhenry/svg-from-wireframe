@@ -4,7 +4,7 @@ import { MeshToSvgWorkerPayload } from './external-interfaces';
 
 export class MeshToSvg {
   public run(input$: Observable<MeshToSvgWorkerPayload>): Observable<string> {
-    return combineLatest([from(import('wasm-svg-from-wireframe')), input$]).pipe(
+    return combineLatest([from(import('mesh-to-svg')), input$]).pipe(
       map(([wasm, input]) => {
         const wasmSvg = wasm.mesh_to_svg_lines(
           input.sourceWidth,

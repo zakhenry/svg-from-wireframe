@@ -21,11 +21,6 @@
     "lib:build:watch": "yarn run lib:build:prod --watch",
     "lib:test:watch": "yarn run ng test --project wireframe-svg",
     "lib:test:ci": "yarn run ng test --project wireframe-svg --watch false",
-    "------------------ WASM COMMANDS ----------------": "",
-    "postlib:build:prod": "cp -r pkg dist/wireframe-svg/wasm-pkg",
-    "wasm:build:prod": "wasm-pack build --release",
-    "wasm:lint:fix": "cargo fix --allow-dirty --allow-staged && cargo fmt",
-    "wasm:lint:check": "cargo check && cargo fmt -- --check",
     "------------------ RELEASE COMMANDS ------------------": "",
     "semantic-release": "semantic-release",
     "------------------ QUICK COMMANDS ------------------": "",
@@ -44,11 +39,11 @@
     "@angular/router": "~9.0.3",
     "@babylonjs/core": "^4.1.0",
     "core-js": "3.6.4",
+    "mesh-to-svg": "1.0.0",
     "observable-webworker": "^3.2.3",
     "rxjs": "~6.5.4",
     "tslib": "^1.10.0",
-    "zone.js": "~0.10.2",
-    "wasm-svg-from-wireframe": "file:./pkg"
+    "zone.js": "~0.10.2"
   },
   "devDependencies": {
     "@angular-devkit/build-angular": "~0.900.4",
