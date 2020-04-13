@@ -34,7 +34,8 @@ export interface MeshToSvgWorkerPayload {
   sceneViewMatrix: MatrixData;
   sceneProjectionMatrix: MatrixData;
   viewport: { x: number; y: number; width: number; height: number };
-  cameraForwardVector: Vector3Data;
+  // @deprecated - this field is no longer required (it is now derived from sceneViewMatrix)
+  cameraForwardVector?: Vector3Data;
   sourceWidth: number;
   sourceHeight: number;
   svgConfig?: SvgConfig;

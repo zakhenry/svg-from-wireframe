@@ -39,6 +39,7 @@ deploy:
     script: yarn semantic-release
     on:
       all_branches: true
+      condition: $TRAVIS_BRANCH =~ ^(master|next)$
   - provider: pages
     skip_cleanup: true
     github_token: $GH_TOKEN
