@@ -219,9 +219,6 @@ export class AppComponent implements AfterViewInit {
                   sceneViewMatrix: scene.getViewMatrix().toArray() as Float32Array,
                   sceneProjectionMatrix: scene.getProjectionMatrix().toArray() as Float32Array,
                   viewport: scene.activeCamera.viewport,
-                  cameraForwardVector: Float32Array.from(
-                    (scene.activeCamera as ArcRotateCamera).getFrontPosition(1).asArray(),
-                  ),
                   sourceWidth: scene.getEngine().getRenderWidth(),
                   sourceHeight: scene.getEngine().getRenderHeight(),
                 };

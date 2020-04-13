@@ -17,7 +17,6 @@ export class MeshToSvg {
           input.sceneViewMatrix,
           input.sceneProjectionMatrix,
           input.meshWorldMatrix,
-          input.cameraForwardVector,
           input.svgConfig?.width,
           input.svgConfig?.height,
           input.svgConfig?.margin,
