@@ -218,7 +218,6 @@ export class AppComponent implements AfterViewInit {
                   sceneTransformMatrix: scene.getTransformMatrix().toArray() as Float32Array,
                   sceneViewMatrix: scene.getViewMatrix().toArray() as Float32Array,
                   sceneProjectionMatrix: scene.getProjectionMatrix().toArray() as Float32Array,
-                  viewport: scene.activeCamera.viewport,
                   sourceWidth: scene.getEngine().getRenderWidth(),
                   sourceHeight: scene.getEngine().getRenderHeight(),
                 };

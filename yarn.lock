@@ -6759,10 +6759,10 @@ merge2@^1.3.0:
   resolved "https://registry.yarnpkg.com/merge2/-/merge2-1.3.0.tgz#5b366ee83b2f1582c48f87e47cf1a9352103ca81"
   integrity sha512-2j4DAdlBOkiSZIsaXk4mTE3sRS02yBHAtfy127xRV3bQUFqXkjHCHLW6Scv7DwNRbIWNHH8zpnz9zMaKXIdvYw==
 
-mesh-to-svg@2.0.1:
-  version "2.0.1"
-  resolved "https://registry.yarnpkg.com/mesh-to-svg/-/mesh-to-svg-2.0.1.tgz#8d4f5b4ece052d907d61a5a61df5a7f3cbee291f"
-  integrity sha512-X7C9ourg5NS3cRjJIlSYwVWSqe01+t8S8axAiGjP7w5UyaB2kRcYy6NgUi5nCIrID7TedFf4kmJjTyVEnqLOsg==
+mesh-to-svg@2.1.2:
+  version "2.1.2"
+  resolved "https://registry.yarnpkg.com/mesh-to-svg/-/mesh-to-svg-2.1.2.tgz#a0337cd190c599328d3c093bd39e96adf82bbb52"
+  integrity sha512-3SBfdY8xzNRfAJhcg+DvbZvA0cnMnw/wM6PZu1xEYsm5uXfgAuRD8AcVUd0zzNJofmHflFfHfCFRJlgZ3NM1aA==
 
 methods@~1.1.2:
   version "1.1.2"

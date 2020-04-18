@@ -39,7 +39,7 @@
     "@angular/router": "~9.0.3",
     "@babylonjs/core": "^4.1.0",
     "core-js": "3.6.4",
-    "mesh-to-svg": "2.0.1",
+    "mesh-to-svg": "2.1.2",
     "observable-webworker": "^3.2.3",
     "rxjs": "~6.5.4",
     "tslib": "^1.10.0",
