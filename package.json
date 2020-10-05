@@ -1,0 +1,20 @@
+{
+  "name": "wireframe-to-svg",
+  "version": "2.3.0",
+  "peerDependencies": {
+    "tslib": "^1.10.0"
+  },
+  "dependencies": {
+    "mesh-to-svg": "2.1.2"
+  },
+  "main": "bundles/wireframe-to-svg.umd.js",
+  "module": "fesm5/wireframe-to-svg.js",
+  "es2015": "fesm2015/wireframe-to-svg.js",
+  "esm5": "esm5/wireframe-to-svg.js",
+  "esm2015": "esm2015/wireframe-to-svg.js",
+  "fesm5": "fesm5/wireframe-to-svg.js",
+  "fesm2015": "fesm2015/wireframe-to-svg.js",
+  "typings": "wireframe-to-svg.d.ts",
+  "metadata": "wireframe-to-svg.metadata.json",
+  "sideEffects": false
+}
