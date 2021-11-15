@@ -5,6 +5,6 @@
     "tslib": "^1.10.0"
   },
   "dependencies": {
-    "mesh-to-svg": "2.1.5"
+    "mesh-to-svg": "2.1.6"
   }
 }
