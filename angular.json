@@ -22,8 +22,13 @@
             "main": "src/main.ts",
             "polyfills": "src/polyfills.ts",
             "tsConfig": "tsconfig.app.json",
-            "assets": ["src/favicon.ico", "src/assets"],
-            "styles": ["src/styles.scss"],
+            "assets": [
+              "src/favicon.ico",
+              "src/assets"
+            ],
+            "styles": [
+              "src/styles.scss"
+            ],
             "scripts": [],
             "webWorkerTsConfig": "tsconfig.worker.json",
             "vendorChunk": true,
@@ -88,8 +93,13 @@
             "polyfills": "src/polyfills.ts",
             "tsConfig": "tsconfig.spec.json",
             "karmaConfig": "karma.conf.js",
-            "assets": ["src/favicon.ico", "src/assets"],
-            "styles": ["src/styles.scss"],
+            "assets": [
+              "src/favicon.ico",
+              "src/assets"
+            ],
+            "styles": [
+              "src/styles.scss"
+            ],
             "scripts": []
           }
         }
@@ -120,9 +130,21 @@
             "tsConfig": "projects/wireframe-svg/tsconfig.spec.json",
             "karmaConfig": "projects/wireframe-svg/karma.conf.js"
           }
+        },
+        "lint": {
+          "builder": "@angular-eslint/builder:lint",
+          "options": {
+            "lintFilePatterns": [
+              "projects/wireframe-svg/**/*.ts",
+              "projects/wireframe-svg/**/*.html"
+            ]
+          }
         }
       }
     }
   },
-  "defaultProject": "wireframe-svg-demo"
+  "defaultProject": "wireframe-svg-demo",
+  "cli": {
+    "defaultCollection": "@angular-eslint/schematics"
+  }
 }
