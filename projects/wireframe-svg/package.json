@@ -6,5 +6,13 @@
   },
   "dependencies": {
     "mesh-to-svg": "2.1.6"
+  },
+  "keywords": [
+    "wireframe",
+    "svg"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/zakhenry/svg-from-wireframe.git"
   }
 }
