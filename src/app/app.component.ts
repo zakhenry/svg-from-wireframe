@@ -50,7 +50,7 @@ export class AppComponent implements AfterViewInit {
   public workerOutput$: Observable<string> = this.workerInput$.pipe(
     exhaustMap(input => {
       return fromWorker<MeshToSvgWorkerPayload, string>(
-        () => new Worker('./mesh-to-svg.worker', { type: 'module' }),
+        () => new Worker(new URL('./mesh-to-svg.worker', import.meta.url), { type: 'module' }),
         of(input),
         i => [
           i.mesh.positions.buffer,
