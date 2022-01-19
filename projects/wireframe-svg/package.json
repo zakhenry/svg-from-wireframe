@@ -2,10 +2,10 @@
   "name": "wireframe-to-svg",
   "version": "0.0.1",
   "peerDependencies": {
-    "tslib": "^1.10.0"
   },
   "dependencies": {
-    "mesh-to-svg": "2.1.6"
+    "mesh-to-svg": "2.1.6",
+    "tslib": "^2.0.0"
   },
   "keywords": [
     "wireframe",
